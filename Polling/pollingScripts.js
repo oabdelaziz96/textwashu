@@ -4,54 +4,41 @@ function pollResponse(e) {
    
   try {
     var doc = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("pollingKey"));
-    var sheet = doc.getSheetByName("TextsByQ");
-    var sheet2 = doc.getSheetByName("Texts");
-
-    var nextRow = sheet.getLastRow()+1; // get next row
-    sheet2.insertRows(2, 2);
-    //var nextRow2 = sheet2.getLastRow()+1;
-
+    var qSheet = doc.getSheetByName("TextsByQ");
+    var mesSheet = doc.getSheetByName("Texts");
     var message = e.parameter["Body"];
     
-    //Parsing answers Related
-          var parsedMessage = message.replace(/,/g,"").replace(/ /g,"");
-          var matchCheck = !(parsedMessage.search("[A-Za-z]+(?=#)") == -1);
-          
-          if (matchCheck) {
-            
-          var filteredMessage = parsedMessage.match("[A-Za-z]+(?=#)");
-          var studQ1 = filteredMessage[0].substring(0, 1).toLowerCase();
-          var studQ2 = filteredMessage[0].substring(1, 2).toLowerCase();
-          var studQ3 = filteredMessage[0].substring(2, 3).toLowerCase();
-            
-          
-          var noTagMessage = message.match(".+(?=#)");
-
-          //Binding Message to Sheet
-          var myMessage = [message, studQ1, studQ2, studQ3];
-          sheet.getRange(nextRow, 1, 1, myMessage.length).setValues([myMessage]);
-          //sheet2.getRange(nextRow2, 1, 2, 1).setValues([[noTagMessage[0]],["------"]]);
-          sheet2.getRange(2, 1, 2, 1).setValues([[noTagMessage[0]],["------"]]);  
-            
-          } else {
-
-            var studQ1 = parsedMessage.substring(0, 1).toLowerCase();
-            var studQ2 = parsedMessage.substring(1, 2).toLowerCase();
-            var studQ3 = parsedMessage.substring(2, 3).toLowerCase();
-          
-          //Binding Message to Sheet
-          var myMessage = [message, studQ1, studQ2, studQ3];
-          sheet.getRange(nextRow, 1, 1, myMessage.length).setValues([myMessage]);
-          //sheet2.getRange(nextRow2, 1, 2, 1).setValues([[message],["------"]]);
-          sheet2.getRange(2, 1, 2, 1).setValues([[message],["------"]]);
-      
-          }
+    //Bind message to messages sheet
+    var noTagMessage = removeTags(message);
+    mesSheet.insertRows(2, 2);
+    mesSheet.getRange(2, 1, 2, 1).setValues([[noTagMessage],["------"]]);
     
-
+    //Verify unique respondent for poll part
+    var curPollNums = SCRIPT_PROP.getProperty("curPollNums");
+    var number = e.parameter["From"].substring(2);
+    var uniqueRespondent = curPollNums.search(number) == -1;
+    
+    if (uniqueRespondent) {
+      //Parsing answers
+      var answerArray = message.toLowerCase().match(/[a-z]/g);
+  
+      var studQ1 = answerArray[0];
+      var studQ2 = answerArray[1];
+      var studQ3 = answerArray[2];
+  
+      //Binding message to questions sheet
+      var myMessage = [message, studQ1, studQ2, studQ3];
+      qSheet.getRange(qSheet.getLastRow()+1, 1, 1, myMessage.length).setValues([myMessage]);
+      
+      //Add number to respondent array
+      curPollNums+= (number + ",");
+      SCRIPT_PROP.setProperty("curPollNums", curPollNums);
+    }
+    
     SpreadsheetApp.flush();
     
   } catch (e) {
-    handleResponse(e);
+    pollResponse(e);
     
   } finally { //release lock
     lock.releaseLock();

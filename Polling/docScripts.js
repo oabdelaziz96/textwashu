@@ -1,27 +1,31 @@
+/*
+ * Must import scripts library to use and call it "GenScripts"
+ */
 function onOpen(e) {
    SpreadsheetApp.getUi()
        .createMenu('Clear Responses')
-       .addItem('For Polls', 'removePolls')
-       .addItem('For Text Feed', 'removeTexts')
-       .addItem('For Both', 'removeBoth')
+       .addItem('For Polls', 'GenScripts.removePollingPolls')
+       .addItem('For Text Feed', 'GenScripts.removePollingTexts')
+       .addItem('For Both', 'GenScripts.removePollingBoth')
        .addToUi();
  }
 
-function removePolls() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+function removePollingPolls() {
+  var ss = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("pollingKey"));
   var messagesSheet = ss.getSheetByName("TextsByQ");
   var numMessages  = messagesSheet.getLastRow()+1;
   messagesSheet.deleteRows(2, numMessages);
+  SCRIPT_PROP.setProperty("curPollNums", "");
 }
 
-function removeTexts() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+function removePollingTexts() {
+  var ss = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("pollingKey"));
   var messagesSheet = ss.getSheetByName("Texts");
   var numMessages  = messagesSheet.getLastRow()+1;
   messagesSheet.deleteRows(2, numMessages);
 }
 
-function removeBoth() {
-  removePolls();
-  removeTexts();
+function removePollingBoth() {
+  removePollingPolls();
+  removePollingTexts();
 }

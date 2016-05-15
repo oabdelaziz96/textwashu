@@ -7,13 +7,15 @@ function handleResponse(e) {
     var sheet = doc.getSheetByName("Texts");
     
     var configSheet = doc.getSheetByName("Config");
-    var prefArray = configSheet.getRange(10, 2, 6, 3).getValues();
-    var autoTag = prefArray[0][0] == "Yes"; //Not implemented
+    var prefArray = configSheet.getRange(10, 2, 8, 3).getValues();
+    var autoTag = prefArray[0][0] == "Yes";
     var autoReply = prefArray[1][0] == "Yes";
     var untagNotify = prefArray[2][0] == "Yes";
     var removeTag = prefArray[3][0] == "Yes"; //Not implemented
     var autoForward = prefArray[4][0] == "Yes"; //Not implemented
     var checkRegex = prefArray[5][0] == "Yes";
+    var firstTimeReply = prefArray[6][0] == "Yes";
+    var shortenURLs = prefArray[7][0] == "Yes";
     var responseText = "";
 
     var nextRow = sheet.getLastRow()+1; // get next row
@@ -21,7 +23,6 @@ function handleResponse(e) {
     var timeStamp = new Date();
     var message = e.parameter["Body"];
     var number = e.parameter["From"].substring(2);
-    
     
     //Start of MMS Code ---------------------------------
     
@@ -41,36 +42,51 @@ function handleResponse(e) {
     sheet.getRange(nextRow, 1, 1, row.length).setValues([row]);
     
     //Start of Filtering Code ----------------------------------------------
-    var allSheets = doc.getSheets();
-    var tags = [];
     
-    for (i=0; i < allSheets.length; i++) { //Getting all sheet names
-      var curSheet = allSheets[i].getSheetName();
-      tags[i] = curSheet;
-    }
-    
-    var badSheets = ["Texts", "Contacts", "Config"];
-  
-    for (i=0; i < badSheets.length; i++) { //Removing Texts, Contacts, and Config sheets from my Arrays
-      var badIndexNum = tags.indexOf(badSheets[i]);
-      allSheets.splice(badIndexNum, 1);
-      tags.splice(badIndexNum, 1);
-    }
+    //Start of AutoTag Code ----
+    if (autoTag) message+= prefArray[0][1];
+    //End of AutoTag Code -------
     
     var tagCheck = !(message.search("#[^ ]+") == -1);
-    var filtersExist = tags.length != 0;
     
-    if (tagCheck && filtersExist) {
-      var messageTag = message.match("(?=#)[^ ]*");
-      var indexNum = tags.indexOf(messageTag[0].toLowerCase());
+    if (tagCheck) {
+      var allSheets = doc.getSheets();
+      var tagSheets = [];
+      var tags = [];
+      
+      for (i=0, index = 0; i < allSheets.length; i++) { //Make array of tag sheets
+        var curSheet = allSheets[i];
+        var curTag = curSheet.getSheetName();
+        var validTagSheet = !(curTag.search("^#[^ ]+$") == -1);
+        
+        if (validTagSheet) {
+            tagSheets[index] = curSheet;
+            tags[index] = curTag.toLowerCase();
+            index++;
+        }
+      }
+      
+      var filtersExist = tags.length != 0;
+      
+      if (filtersExist) {
+        var messageTag = message.match("(?=#)[^ ]*");
+        var indexNum = tags.indexOf(messageTag[0].toLowerCase());
+            
+        if (indexNum >= 0) { //Add text to tagged sheet if one exists
+          var sheetWithTag = tagSheets[indexNum];
+          var nextTagRow = sheetWithTag.getLastRow() + 1;
           
-      if (indexNum >= 0) {
-        var nextTagRow = allSheets[indexNum].getLastRow() + 1;
-        allSheets[indexNum].getRange(nextTagRow, 1, 1, 3).setValues([row]);
+          if (removeTag) {
+            message = removeTags(message);
+            row = [timeStamp, number, message];
+          }
+          
+          sheetWithTag.getRange(nextTagRow, 1, 1, 3).setValues([row]);
+        }
       }
     }
-    
     //End of filtering code ----------------------------------------------
+    
     //Start of contact code ----------------------------------------------
     var contactSheet = doc.getSheetByName("Contacts");
     var lastContact = contactSheet.getLastRow()+1;
@@ -78,32 +94,31 @@ function handleResponse(e) {
     var isNew = allContacts.search(number) == -1;
     
     if (isNew) {
-     contactSheet.getRange(lastContact, 1).setValue(number); 
+      contactSheet.getRange(lastContact, 1).setValue(number);
+     
+      if (firstTimeReply) responseText+= addMessage(prefArray[6][1]);
     }
-    
     //End of contact code ----------------------------------------------
     
     SpreadsheetApp.flush();
     
     //Respond to message
-    if (autoReply) {
-      responseText+= prefArray[1][1];
-    }
+    if (autoReply) responseText+= addMessage(prefArray[1][1]);
     
-    if (!tagCheck && untagNotify) {
-      responseText+= prefArray[2][1];
-    }
+    if (!tagCheck && untagNotify) responseText+= addMessage(prefArray[2][1]);
     
     if (checkRegex) {
       var testRegex = prefArray[5][1];
       var regexMessage  = prefArray[5][2];
-      
       var regCheckFail = message.search(testRegex) == -1;
-      
-      if (regCheckFail) {
-        responseText+= regexMessage;
-      }
+      if (regCheckFail) responseText+= addMessage(regexMessage);
     }
+    
+    //Replace [] in response text with values from contact sheet
+    responseText = mergeInfo(number, responseText);
+    
+    //Shorten URLs if option is enabled
+    if (shortenURLs) responseText = detectAndShortenURLs(responseText);
     
     return xmlHelper(responseText);
     
@@ -112,6 +127,5 @@ function handleResponse(e) {
     
   } finally { //release lock
     lock.releaseLock();
-  }
-  
+  } 
 }

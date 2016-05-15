@@ -14,5 +14,7 @@ function setup() {
     SCRIPT_PROP.setProperty("twilioNumber", twilioNumber);
     SCRIPT_PROP.setProperty("twilioSID", twilioSID);
     SCRIPT_PROP.setProperty("twilioAuth", twilioAuth);
-
+    
+    //Holder property for polling
+    SCRIPT_PROP.setProperty("curPollNums", "");
 }
