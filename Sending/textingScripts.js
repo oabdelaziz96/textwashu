@@ -23,8 +23,8 @@ function sendingSendAllSMS() {
 function sendingSendAllMMS() {
   var ui = SpreadsheetApp.getUi();
 
-  var result = ui.prompt(
-    'Are you sure you want to send these messages as a multimedia message?',
+  var result = ui.alert(
+    'Are you sure you want to send these messages as multimedia messages?',
     'The message field should only include the media URL',
       ui.ButtonSet.YES_NO);
 
