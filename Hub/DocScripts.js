@@ -29,17 +29,18 @@ function newFilter() {
       var ss = SpreadsheetApp.getActiveSpreadsheet();
       ss.insertSheet(newTag, ss.getNumSheets());
       var newSheet = ss.getSheetByName(newTag);
-      var topRow = [["Time","Phone Number","Message","","","","","NumMessages"]];
+      var topRow = [["Time","Phone Number","Message","","","Hashtag AutoReply:"]];
       newSheet.getRange(1, 1, 1, topRow[0].length).setValues(topRow);
+      newSheet.autoResizeColumn(6);
+      newSheet.getRange("F1").setNote("Message in G1 will be the automatic reply to any message with this sheet's hashtag");
       newSheet.setFrozenRows(1);
       newSheet.getRange(1, 1, 1, 3).setFontWeight("bold");
       newSheet.getRange(1, 1, 1, 3).setHorizontalAlignment("center");
-      newSheet.getRange("I1").setFormula("=COUNTA(C:C)-1");
       newSheet.getRange("A2").setValue("                               ");
       newSheet.autoResizeColumn(1);
       newSheet.getRange("A2").setValue("");
       newSheet.getRange(2, 1, 1000).setNumberFormat("M/d/yyyy H:mm:ss");
-       newSheet.getRange(2, 1, 1000, 3).setHorizontalAlignment("center");
+      newSheet.getRange(2, 1, 1000, 3).setHorizontalAlignment("center");
     } else {
       
       ui.alert("Invalid Tag");

@@ -2,7 +2,6 @@ function onOpen(e) {
    SpreadsheetApp.getUi()
        .createMenu('Grader')
        .addItem('New Grader', 'newGrader')
-       //.addItem('Delete Filter', 'deleteFilter')
        .addToUi();
  }
 
@@ -39,9 +38,7 @@ function newGrader() {
       
       //Then get the data
       var contactsSheet = ss.getSheetByName("Contacts");
-      var impRng = contactsSheet.getRange("A1").getFormula();
-      var sheetID = impRng.slice(14,58);
-      var ss2 = SpreadsheetApp.openById(sheetID);
+      var ss2 = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("hubKey"));
       var hashSheet = ss2.getSheetByName(newTag);
       var quantity = hashSheet.getLastRow()-1;
       var dataArray = hashSheet.getRange(2, 1, quantity, 3).getValues();

@@ -1,63 +1,59 @@
-function sendSms(to, body) {
-  var number = "+1"+to;
-  
-  var messages_url = "https://api.twilio.com/2010-04-01/Accounts/AC61c94f6c2b81968a1cf39053629fa3ca/Messages.json";
-
-  var payload = {
-    "To": number,
-    "Body" : body,
-    "From" : "+13142793219"
-  };
-
-  var options = {
-    "method" : "post",
-    "payload" : payload
-  };
-
-  options.headers = { 
-    "Authorization" : "Basic " + Utilities.base64Encode("AC61c94f6c2b81968a1cf39053629fa3ca:d92455e23a3b893288561b88f1b03b31")
-  };
-
-  UrlFetchApp.fetch(messages_url, options);
-}
-
-function sendAll() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+function sendingSendAllSMS() {
+  var ss = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("sendTextsKey"));
   var sheet = ss.getSheetByName("Messages");
   var startRow = 2; 
   var numRows = sheet.getLastRow() - 1; 
-  var dataRange = sheet.getRange(startRow, 1, numRows, 2) 
+  var dataRange = sheet.getRange(startRow, 1, numRows, 2);
   var data = dataRange.getValues();
 
-  for (i in data) {
-    var row = data[i];
+  for (var i = 0; i < data.length; i++) {
     try {
-      response_data = sendSms(row[0], row[1]);
-      status = "Sent!";
+      response_data = sendSMS(data[i][0], data[i][1]);
+      var status = "Sent!";
+      var note = "Actual message sent: " + response_data;
     } catch(err) {
-      Logger.log(err);
-      status = "error";
+      var status = "error";
+      var note = "Error: " + err;
     }
-    sheet.getRange(startRow + Number(i), 3).setValue(status);
+    sheet.getRange(startRow + i, 3).setValue(status).setNote(note);
+    sheet.getRange("A1").getValue(); //Just to visually see messages as they are sent
   }
 }
 
-function sendTexts() {
-  sendAll();
+function sendingSendAllMMS() {
+  var ui = SpreadsheetApp.getUi();
+
+  var result = ui.prompt(
+    'Are you sure you want to send these messages as a multimedia message?',
+    'The message field should only include the media URL',
+      ui.ButtonSet.YES_NO);
+
+  // Process the user's response.
+  var button = result.getSelectedButton();
+  
+  if (button == ui.Button.YES) {
+    var ss = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("sendTextsKey"));
+    var sheet = ss.getSheetByName("Messages");
+    var startRow = 2; 
+    var numRows = sheet.getLastRow() - 1; 
+    var dataRange = sheet.getRange(startRow, 1, numRows, 2);
+    var data = dataRange.getValues();
+  
+    for (var i = 0; i < data.length; i++) {
+      try {
+        response_data = sendMMS(data[i][0], data[i][1]);
+        var status = "Sent!";
+      } catch(err) {
+        var status = "error";
+      }
+      sheet.getRange(startRow + i, 3).setValue(status);
+      sheet.getRange("A1").getValue(); //Just to visually see messages as they are sent
+    }
+  }
 }
 
-function onOpen(e) {
-   SpreadsheetApp.getUi()
-       .createMenu('Texting Options')
-       .addItem('Send Texts', 'sendTexts')
-       .addItem('Load Contacts', 'loadAll')
-       .addItem('Load Filter', 'loadFilter')
-       .addItem('Clear List', 'removeCurrent')
-       .addToUi();
- }
-
-function loadAll() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+function sendingLoadAll() {
+  var ss = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("sendTextsKey"));
   var contactsSheet = ss.getSheetByName("Contacts");
   var numContacts = contactsSheet.getLastRow()-1;
   var messagesSheet = ss.getSheetByName("Messages");
@@ -65,21 +61,23 @@ function loadAll() {
   var numbers = messagesSheet.getRange(2, 1, numContacts, 1).setValues(contactsArray);
 }
 
-/*
-Complete but need to add the data validation to the new cells just created
-*/
-
-function removeCurrent() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+function sendingRemoveCurrent() {
+  var ss = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("sendTextsKey"));
   var messagesSheet = ss.getSheetByName("Messages");
   var numMessages  = messagesSheet.getLastRow();
   messagesSheet.deleteRows(2, numMessages);
   messagesSheet.insertRows(2, numMessages);
-  //var dataValRule = messagesSheet.getRange(500, 1).getDataValidation();
-  //messagesSheet.getRange(2, 1, numMessages).setDataValidation(dataValRule);
+  
+  var dataVal = SpreadsheetApp.newDataValidation()
+                  .requireFormulaSatisfied("=10=LEN(A2)")
+                  .setAllowInvalid(false)
+                  .setHelpText("Please enter a 10-digit phone number")
+                  .build();
+  
+  ss.getRange("A2:A1000").setDataValidation(dataVal);
 }
 
-function loadFilter() {
+function sendingLoadFilter() {
  var ui = SpreadsheetApp.getUi();
 
   var result = ui.prompt(
@@ -95,14 +93,12 @@ function loadFilter() {
   if (button == ui.Button.OK) {
     if (matchCheck) {
       //Getting hub sheet ID
-      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var ss = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("sendTextsKey"));
       var contactsSheet = ss.getSheetByName("Contacts");
       var messagesSheet = ss.getSheetByName("Messages");
-      var impRng = contactsSheet.getRange("A1").getFormula();
-      var sheetID = impRng.slice(14,58);
       
       //Getting info from hub
-      var ss = SpreadsheetApp.openById(sheetID);
+      var ss = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("hubKey"));
       var hashSheet = ss.getSheetByName(tag);
       var quantity = hashSheet.getLastRow()-1;
       var numbersArray = hashSheet.getRange(2, 2, quantity, 1).getValues();
@@ -113,30 +109,20 @@ function loadFilter() {
       var numFiltered = 0;
       for (i=0; i < numbersArray.length; i++) {
         var cur = numbersArray[i][0];
-        
         var valid = (helpArray.indexOf(cur) == -1);
         
-        Logger.log(cur+" "+valid);
-        
         if (valid) {
-          
           helpArray[numFiltered] = cur;
           filteredArray[numFiltered] = [cur];
-          numFiltered++;
-          
+          numFiltered++; 
         }
-        
       }
       
       //Send data back to messages sheet
       var numbersBack = messagesSheet.getRange(2, 1, filteredArray.length, 1).setValues(filteredArray);
       
-      
     } else {
-      
       ui.alert("Invalid Tag");
-    
     }
-  } 
-  
+  }
 }

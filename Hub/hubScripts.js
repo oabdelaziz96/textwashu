@@ -7,15 +7,17 @@ function handleResponse(e) {
     var sheet = doc.getSheetByName("Texts");
     
     var configSheet = doc.getSheetByName("Config");
-    var prefArray = configSheet.getRange(10, 2, 8, 3).getValues();
+    var prefArray = configSheet.getRange(10, 2, 10, 3).getValues();
     var autoTag = prefArray[0][0] == "Yes";
     var autoReply = prefArray[1][0] == "Yes";
     var untagNotify = prefArray[2][0] == "Yes";
-    var removeTag = prefArray[3][0] == "Yes"; //Not implemented
-    var autoForward = prefArray[4][0] == "Yes"; //Not implemented
+    var removeTag = prefArray[3][0] == "Yes";
+    var autoForward = prefArray[4][0] == "Yes";
     var checkRegex = prefArray[5][0] == "Yes";
     var firstTimeReply = prefArray[6][0] == "Yes";
     var shortenURLs = prefArray[7][0] == "Yes";
+    var invalTagNotify = prefArray[8][0] == "Yes";
+    var noteReply = prefArray[9][0] == "Yes";
     var responseText = "";
 
     var nextRow = sheet.getLastRow()+1; // get next row
@@ -24,6 +26,9 @@ function handleResponse(e) {
     var message = e.parameter["Body"];
     var number = e.parameter["From"].substring(2);
     
+    //Forward text message if option is enabled
+    if (autoForward) sendSMS(prefArray[4][1], "Text from " + number + ": " + message);
+    
     //Start of MMS Code ---------------------------------
     
     var mediaExists = e.parameter["NumMedia"] > 0; //check if there is a picture
@@ -31,7 +36,7 @@ function handleResponse(e) {
     if (mediaExists) {
       
       var mediaURL = e.parameter["MediaUrl0"];
-      message += ("Picture URL: " + mediaURL);
+      message += ("Picture URL: " + URLShortener(mediaURL));
       //sheet.insertImage(mediaURL, 3, nextRow);
       
     }
@@ -44,7 +49,7 @@ function handleResponse(e) {
     //Start of Filtering Code ----------------------------------------------
     
     //Start of AutoTag Code ----
-    if (autoTag) message+= prefArray[0][1];
+    if (autoTag) message+= (" "+prefArray[0][1]);
     //End of AutoTag Code -------
     
     var tagCheck = !(message.search("#[^ ]+") == -1);
@@ -69,19 +74,28 @@ function handleResponse(e) {
       var filtersExist = tags.length != 0;
       
       if (filtersExist) {
-        var messageTag = message.match("(?=#)[^ ]*");
-        var indexNum = tags.indexOf(messageTag[0].toLowerCase());
+        var messageTag = message.match(/(?=#)[^ ]*/g);
+        
+        for (var i = 0; i < messageTag.length; i++) {
+          var indexNum = tags.indexOf(messageTag[i].toLowerCase());
+              
+          if (indexNum >= 0) { //Add text to tagged sheet if one exists
+            var sheetWithTag = tagSheets[indexNum];
+            var nextTagRow = sheetWithTag.getLastRow() + 1;
             
-        if (indexNum >= 0) { //Add text to tagged sheet if one exists
-          var sheetWithTag = tagSheets[indexNum];
-          var nextTagRow = sheetWithTag.getLastRow() + 1;
-          
-          if (removeTag) {
-            message = removeTags(message);
-            row = [timeStamp, number, message];
+            if (removeTag) {
+              message = removeTags(message);
+              row = [timeStamp, number, message];
+            }
+                
+            sheetWithTag.getRange(nextTagRow, 1, 1, 3).setValues([row]);
+            
+            var tagResponse = sheetWithTag.getRange("G1").getValue();
+            if (tagResponse !== "") responseText+= addMessage(tagResponse);
+            
+          } else { //Text message did not have a valid tag
+            if (invalTagNotify) responseText+= addMessage(prefArray[8][1]);
           }
-          
-          sheetWithTag.getRange(nextTagRow, 1, 1, 3).setValues([row]);
         }
       }
     }
@@ -119,6 +133,9 @@ function handleResponse(e) {
     
     //Shorten URLs if option is enabled
     if (shortenURLs) responseText = detectAndShortenURLs(responseText);
+    
+    //Log reply if option is enabled
+    if (noteReply) sheet.getRange(nextRow, 3).setNote("Replied with: " + responseText);
     
     return xmlHelper(responseText);
     
