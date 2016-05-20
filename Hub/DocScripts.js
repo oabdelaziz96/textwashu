@@ -1,12 +1,9 @@
-/**
- * @OnlyCurrentDoc
- */
-
 function onOpen(e) {
    SpreadsheetApp.getUi()
        .createMenu('Filters')
        .addItem('Add Filter', 'newFilter')
-       .addItem('Delete Filter', 'deleteFilter')
+       .addItem('Delete This Filter', 'deleteFilter')
+       .addItem('Archive This Filter', 'archiveFilter')
        .addToUi();
  }
 
@@ -50,24 +47,37 @@ function newFilter() {
 }
 
 function deleteFilter() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var valid = sheet.getName().search("(^#[^ ]*$)") !== -1;
   var ui = SpreadsheetApp.getUi();
-
-    var result = ui.prompt(
-    'Please enter the hashtag you would like to delete:',
-    'For example, to stop tracking #yay, please write: #yay',
-      ui.ButtonSet.OK_CANCEL);
-
-  // Process the user's response.
-  var button = result.getSelectedButton();
-  var tagName = result.getResponseText();
-  var matchCheck = !(tagName.search("(^#[^ ]*$)") == -1);
   
-  if (button == ui.Button.OK) {
-    if (matchCheck) {
-      var ss = SpreadsheetApp.getActiveSpreadsheet();
-      ss.deleteSheet(ss.getSheetByName(tagName));
-    } else {
-      ui.alert("Invalid Tag");
-    }    
+  if (valid) { // A filter sheet is selected
+    var response = ui.alert("Are you sure you want to delete this filter and not archive it?","This action is not reversible", ui.ButtonSet.YES_NO);
+    
+    if (response == ui.Button.YES) {
+      ss.deleteSheet(sheet);
+    }
+    
+  } else { // A filter sheet is not selected
+    ui.alert("The sheet currently selected is not a filter. Please select a filter (or hashtag) sheet and try again");
+  } 
+}
+
+function archiveFilter() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var hashtag = sheet.getName();
+  var valid = hashtag.search("(^#[^ ]*$)") !== -1;
+  var ui = SpreadsheetApp.getUi();
+  
+  if (valid) { // A filter sheet is selected
+    var archiveSpreadsheet = SpreadsheetApp.openById(GenScripts.SCRIPT_PROP.getProperty("archiveKey"));
+    sheet.copyTo(archiveSpreadsheet);
+    var newSheet = archiveSpreadsheet.getSheetByName("Copy of "+hashtag);
+    newSheet.setName(hashtag);
+    ss.deleteSheet(sheet);
+  } else { // A filter sheet is not selected
+    ui.alert("The sheet currently selected is not a filter. Please select a filter (or hashtag) sheet and try again");
   } 
 }

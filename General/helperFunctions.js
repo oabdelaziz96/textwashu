@@ -79,7 +79,13 @@ function mergeInfo(phoneNumber, responseText) {
       if (indexNum >= 0) {
         //Find the merge value by number and replace it with curMerge
         var rowOfPhoneNum = ArrConvert(contactsArray).indexOf(phoneNumber+"");
-        var mergeValue = contactsArray[rowOfPhoneNum][indexNum]+"";
+        
+        if (rowOfPhoneNum >= 0) {
+          var mergeValue = contactsArray[rowOfPhoneNum][indexNum]+"";
+        } else {
+          var mergeValue = "";
+        }
+        
         responseText = responseText.replace(curMerge, mergeValue);
       }
     }

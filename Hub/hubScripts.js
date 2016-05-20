@@ -7,7 +7,7 @@ function handleResponse(e) {
     var sheet = doc.getSheetByName("Texts");
     
     var configSheet = doc.getSheetByName("Config");
-    var prefArray = configSheet.getRange(10, 2, 10, 3).getValues();
+    var prefArray = configSheet.getRange(10, 2, 11, 3).getValues();
     var autoTag = prefArray[0][0] == "Yes";
     var autoReply = prefArray[1][0] == "Yes";
     var untagNotify = prefArray[2][0] == "Yes";
@@ -18,6 +18,7 @@ function handleResponse(e) {
     var shortenURLs = prefArray[7][0] == "Yes";
     var invalTagNotify = prefArray[8][0] == "Yes";
     var noteReply = prefArray[9][0] == "Yes";
+    var hashText = prefArray[10][0] == "Yes";
     var responseText = "";
 
     var nextRow = sheet.getLastRow()+1; // get next row
@@ -47,10 +48,9 @@ function handleResponse(e) {
     sheet.getRange(nextRow, 1, 1, row.length).setValues([row]);
     
     //Start of Filtering Code ----------------------------------------------
-    
-    //Start of AutoTag Code ----
+
     if (autoTag) message+= (" "+prefArray[0][1]);
-    //End of AutoTag Code -------
+    if (hashText) message = "#" + message;
     
     var tagCheck = !(message.search("#[^ ]+") == -1);
     
@@ -85,9 +85,9 @@ function handleResponse(e) {
             
             if (removeTag) {
               message = removeTags(message);
-              row = [timeStamp, number, message];
             }
-                
+            
+            row = [timeStamp, number, message];
             sheetWithTag.getRange(nextTagRow, 1, 1, 3).setValues([row]);
             
             var tagResponse = sheetWithTag.getRange("G1").getValue();
