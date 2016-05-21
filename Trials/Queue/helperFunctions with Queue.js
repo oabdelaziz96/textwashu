@@ -2,10 +2,6 @@ function xmlHelper(responseText) {
   var beginningText = '<?xml version="1.0" encoding="UTF-8" ?> <Response>';
   var endingText = '</Response>';
   
-  if (responseText !== "") {
-    responseText = '<Message>' + responseText + '</Message>'
-  }
-  
   var textOutput = beginningText + responseText + endingText;
   var xmlOutput = ContentService.createTextOutput(textOutput).setMimeType(ContentService.MimeType.XML);
   
@@ -27,6 +23,12 @@ function addMessage(originalMessage, addedMessage) {
   }
   return originalMessage;
 }
+
+/* Old function for XML before queue was developed
+function addMessage(messageToSend) {
+    return '<Message>' + messageToSend + '</Message>'
+}
+*/
 
 /*
  *Converts 2D array to 1D array with
@@ -55,6 +57,7 @@ function URLShortener(longURL) {
  *Detects URLs (if available) in text and shortens them
  */
 function detectAndShortenURLs(textBlob) {
+  //textBlob = textBlob.replace(/(<\/Message>)/g, " </Message>"); Only for XML
   var urlRegex = /(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})/g;
   
   var urlArray = textBlob.match(urlRegex);
@@ -67,6 +70,7 @@ function detectAndShortenURLs(textBlob) {
       textBlob = textBlob.replace(longURL, shortURL);
     }
   }
+  textBlob = textBlob.replace(/( <\/Message>)/g, "</Message>");
   return textBlob;
 }
 

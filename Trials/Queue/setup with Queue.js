@@ -6,9 +6,9 @@ function setup() {
     var pollingSheetID = "1azhpnR4ByGA3jlHjexTI8BGH7TPoX6q9Q2eSPOFFKeo";
     var sendTextsID = "1sSCj8daqToaLAoO6f0c2zchTpYFbgmuHPh8lsoyoEvg";
     var archiveID = "1CoeKkvw3Jvn35PKRr8SvRJtlk8c8fTNzWXX5HnWy390";
-    var twilioNumber = "+16309488643";
-    var twilioSID = "AC3aa2b5eadf97d7dd03129baa01173685";
-    var twilioAuth = "2abe61168a8dc62f8d87daf3f4c52651";
+    var twilioNumber = "+13142549679";
+    var twilioSID = "AC994903a8a48275a31f0a5c8e9dd50824";
+    var twilioAuth = "9699824d4e98e2bf49b3827049007ce9";
     
     //Saving values to script
     SCRIPT_PROP.setProperty("hubKey", hubSheetID);
@@ -21,4 +21,8 @@ function setup() {
     
     //Holder property for polling
     SCRIPT_PROP.setProperty("curPollNums", "");
+    
+    //Holder properties for hub
+    SCRIPT_PROP.setProperty("eventQ", "[]");
+    SCRIPT_PROP.setProperty("hubLock", "unlocked");
 }
