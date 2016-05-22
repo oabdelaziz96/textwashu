@@ -24,8 +24,8 @@ function handleResponse(e) {
     var nextRow = sheet.getLastRow()+1; // get next row
 
     var timeStamp = new Date();
-    var message = e.parameter["Body"];
-    var number = e.parameter["From"].substring(2);
+    var message = e.parameter["Body"].substring(13);//e.parameter["Body"]; -------- CHANGED FOR STRESS TESTING
+    var number = e.parameter["Body"].substring(0, 10);//e.parameter["From"].substring(2); -------- CHANGED FOR STRESS TESTING
     
     //Forward text message if option is enabled
     if (autoForward) sendSMS(prefArray[4][1], "Text from " + number + ": " + message);
@@ -144,7 +144,7 @@ function handleResponse(e) {
     
     lock.releaseLock();
     
-    sendSMS(number, responseText);
+    sendSMS("6306246627", "RF " + number + ": " + responseText);//sendSMS(number, responseText); -------- CHANGED FOR STRESS TESTING
     
   } else {
     

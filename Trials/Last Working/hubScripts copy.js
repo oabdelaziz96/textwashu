@@ -1,8 +1,8 @@
 function handleResponse(e) {
-  var lock = LockService.getPublicLock();
-  lock.waitLock(30000);  // wait 30 seconds before conceding defeat.
+  var lock = LockService.getScriptLock();
+  var lockAquired = lock.tryLock(30000); // wait 30 seconds before conceding defeat.
    
-  try {
+  if (lockAquired) {
     var doc = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("hubKey"));
     var sheet = doc.getSheetByName("Texts");
     
@@ -144,14 +144,14 @@ function handleResponse(e) {
     
     lock.releaseLock();
     
-    return xmlHelper(responseText);
+    sendSMS(number, responseText);
     
-  } catch (err) {
+  } else {
     
     //Just for the purposes of testing
-    MailApp.sendEmail("oabdelaziz@me.com", "From Hub: " + e.parameter["Body"], e.parameter["SmsSid"]);
+    //MailApp.sendEmail("oabdelaziz@me.com", "From Hub: " + e.parameter["Body"], e.parameter["SmsSid"]);
     
-    return handleResponse(e);
+    handleResponse(e);
     
   }
 }

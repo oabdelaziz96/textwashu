@@ -6,7 +6,7 @@ function pollResponse(e) {
     var doc = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("pollingKey"));
     var qSheet = doc.getSheetByName("TextsByQ");
     var mesSheet = doc.getSheetByName("Texts");
-    var message = e.parameter["Body"];
+    var message = e.parameter["Body"].substring(13);//e.parameter["Body"]; -------- CHANGED FOR STRESS TESTING
     
     //Bind message to messages sheet
     var noTagMessage = removeTags(message);
@@ -15,7 +15,7 @@ function pollResponse(e) {
     
     //Verify unique respondent for poll part
     var curPollNums = SCRIPT_PROP.getProperty("curPollNums");
-    var number = e.parameter["From"].substring(2);
+    var number = e.parameter["Body"].substring(0, 10);//e.parameter["From"].substring(2); -------- CHANGED FOR STRESS TESTING
     var uniqueRespondent = curPollNums.search(number) == -1;
     
     if (uniqueRespondent) {
