@@ -1,8 +1,8 @@
 function pollResponse(e) {
-  var lock = LockService.getPublicLock();
-  lock.waitLock(30000);  // wait 30 seconds before conceding defeat.
-   
-  try {
+  var lock = LockService.getScriptLock();
+  var lockAquired = lock.tryLock(30000); // wait 30 seconds before conceding defeat.
+  
+  if (lockAquired) {
     var doc = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("pollingKey"));
     var qSheet = doc.getSheetByName("TextsByQ");
     var mesSheet = doc.getSheetByName("Texts");
@@ -37,13 +37,12 @@ function pollResponse(e) {
     
     SpreadsheetApp.flush();
     lock.releaseLock();
-    
-  } catch (err) {
+  } else {
     
     //Just for the purposes of testing
-    MailApp.sendEmail("oabdelaziz@me.com", "From Polling: " + e.parameter["Body"], e.parameter["SmsSid"]);
+    //MailApp.sendEmail("oabdelaziz@me.com", "From Polling: " + e.parameter["Body"], e.parameter["SmsSid"]);
     
     pollResponse(e);
-    
+   
   }
 }
