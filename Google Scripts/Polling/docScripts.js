@@ -15,6 +15,7 @@ function removePollingPolls() {
   var messagesSheet = ss.getSheetByName("TextsByQ");
   var numMessages  = messagesSheet.getLastRow()+1;
   messagesSheet.deleteRows(2, numMessages);
+  messagesSheet.insertRows(2, numMessages);
   SCRIPT_PROP.setProperty("curPollNums", "");
 }
 

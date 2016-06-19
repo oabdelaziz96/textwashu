@@ -21,10 +21,16 @@ function pollResponse(e) {
     if (uniqueRespondent) {
       //Parsing answers
       var answerArray = message.toLowerCase().match(/[a-z]/g);
-  
-      var studQ1 = answerArray[0];
-      var studQ2 = answerArray[1];
-      var studQ3 = answerArray[2];
+      
+      var studQ1 = "";
+      var studQ2 = "";
+      var studQ3 = "";
+      
+      if (answerArray !== null) {
+        studQ1 = answerArray[0];
+        studQ2 = answerArray[1];
+        studQ3 = answerArray[2];
+      }
   
       //Binding message to questions sheet
       var myMessage = [message, studQ1, studQ2, studQ3];

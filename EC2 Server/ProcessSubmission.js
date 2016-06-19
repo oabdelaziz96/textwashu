@@ -1,8 +1,49 @@
-function handleResponse(e) {
-  var lock = LockService.getScriptLock();
-  var lockAquired = lock.tryLock(30000); // wait 30 seconds before conceding defeat.
-   
-  if (lockAquired) {
+var mysql = require("mysql");
+
+module.exports = {
+
+  test: function(data) {
+    
+    // First you need to create a connection to the db
+    var con = mysql.createConnection({
+      host: "localhost",
+      user: "twilio",
+      password: "washu123",
+      database: "twilio"
+    });
+    
+    con.connect(function(err){
+      if(err){
+        console.log('Error connecting to Db');
+        return;
+      }
+      console.log('Connection established');
+    });
+    
+    con.query('SELECT * FROM contacts',function(err,rows){
+    if(err) throw err;
+  
+    console.log('Data received from Db:\n');
+    console.log(rows);
+    });
+    
+    con.end(function(err) {
+      // The connection is terminated gracefully
+      // Ensures all previously enqueued queries are still
+      // before sending a COM_QUIT packet to the MySQL server.
+    });
+    
+    console.log("test passed!");
+      
+  },
+  
+  processSubmission: function(data) {
+    
+    var responseText = "";
+    
+    
+    
+    
     var doc = SpreadsheetApp.openById(SCRIPT_PROP.getProperty("hubKey"));
     var sheet = doc.getSheetByName("Texts");
     
@@ -19,10 +60,9 @@ function handleResponse(e) {
     var invalTagNotify = prefArray[8][0] == "Yes";
     var noteReply = prefArray[9][0] == "Yes";
     var hashText = prefArray[10][0] == "Yes";
-    var responseText = "";
-
+  
     var nextRow = sheet.getLastRow()+1; // get next row
-
+  
     var timeStamp = new Date();
     var message = e.parameter["Body"].substring(13);//e.parameter["Body"]; -------- CHANGED FOR STRESS TESTING
     var number = e.parameter["Body"].substring(0, 10);//e.parameter["From"].substring(2); -------- CHANGED FOR STRESS TESTING
@@ -63,7 +103,7 @@ function handleResponse(e) {
     if (autoReply) responseText = addMessage(responseText, prefArray[1][1]);
     
     //Start of Filtering Code ----------------------------------------------
-
+  
     if (autoTag) message+= (" "+prefArray[0][1]);
     if (hashText) message = "#" + message;
     
@@ -139,19 +179,10 @@ function handleResponse(e) {
       
       //Log reply if option is enabled
       if (noteReply) sheet.getRange(nextRow, 3).setNote("Replied with: " + responseText);
+      
+      sendSMS("6306246627", "RF " + number + ": " + responseText);//sendSMS(number, responseText); -------- CHANGED FOR STRESS TESTING
     
     }
-    
-    lock.releaseLock();
-    
-    sendSMS("6306246627", "RF " + number + ": " + responseText);//sendSMS(number, responseText); -------- CHANGED FOR STRESS TESTING
-    
-  } else {
-    
-    //Just for the purposes of testing
-    //MailApp.sendEmail("oabdelaziz@me.com", "From Hub: " + e.parameter["Body"], e.parameter["SmsSid"]);
-    
-    handleResponse(e);
-    
   }
-}
+  
+};

@@ -6,9 +6,12 @@ function setup() {
     var pollingSheetID = "1azhpnR4ByGA3jlHjexTI8BGH7TPoX6q9Q2eSPOFFKeo";
     var sendTextsID = "1sSCj8daqToaLAoO6f0c2zchTpYFbgmuHPh8lsoyoEvg";
     var archiveID = "1CoeKkvw3Jvn35PKRr8SvRJtlk8c8fTNzWXX5HnWy390";
-    var twilioNumber = "+16304487716";
-    var twilioSID = "ACabad7f6596b03c23e26fb4254e25fdfa";
-    var twilioAuth = "853bcb208befb6492021bedb396e16f7";
+    var twilioNumber = "+16302503186";
+    var twilioSID = "ACaa5fbca66c5a83cdd8439c9090eb8367";
+    var twilioAuth = "dcc4859b4c886d1a1cd5453a49a1a8a2";
+    
+    //Script URL for Reference
+    // = https://script.google.com/macros/s/AKfycbw9idxm9BEtnDGkxYKsMaDaor9wTs6LQ3qq66YC6SIvh0GMeS7T/exec
     
     //Saving values to script
     SCRIPT_PROP.setProperty("hubKey", hubSheetID);
