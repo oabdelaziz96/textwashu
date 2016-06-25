@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <H1 align="center">Text your Questions to (314) 254-8045</H1>
+      
+      <script src="/socket.io/socket.io.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+      <script type ="text/javascript">
+ 
+      var socketio = io.connect();
+      socketio.on("message_to_client",function(data) {
+         //Append an HR thematic break and the escaped HTML of the new message
+         //$( ".chatlog" ).prepend( "<p>"+data['message']+"</p>" );
+         //document.getElementById("chatlog").appendChild(document.createElement("hr"));
+         $('#chatlog').prepend(data['message']);
+         $('#chatlog').prepend("<hr>");
+         //document.getElementById("chatlog").appendChild(document.createTextNode(data['message']));
+      });
+ 
+      </script>
+   </head>
+   <body>
+      <div id="chatlog" style="font-size:20px"></div>
+   </body>
+</html>
