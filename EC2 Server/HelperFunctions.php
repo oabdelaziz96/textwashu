@@ -264,6 +264,28 @@ function numberExistsInSession($number, $hashtag, $mysqli) {
     return $result;
 }
 
+//Sends text message to phone number
+function sendSMS($phoneNumber, $message) {
+    if (!(is_null($message) || ($message == ""))) {
+        $AccountSid = "ACdc1251a1762be46d5b9e5021d2954f57";
+        $AuthToken = "b620065bd7bd2ee1465a22ba5d0dd4ca";
+        $twilioNumber = "+13142548045";
+        $client = new Services_Twilio($AccountSid, $AuthToken);
+        $sms = $client->account->messages->sendMessage($twilioNumber, $phoneNumber, $message);
+    }
+}
+
+//Sends multimedia message to phone number
+function sendMMS($phoneNumber, $mediaURL) {
+    if (!(is_null($mediaURL) || ($mediaURL == ""))) {
+        $AccountSid = "ACdc1251a1762be46d5b9e5021d2954f57";
+        $AuthToken = "b620065bd7bd2ee1465a22ba5d0dd4ca";
+        $twilioNumber = "+13142548045";
+        $client = new Services_Twilio($AccountSid, $AuthToken);
+        $sms = $client->account->messages->sendMessage($twilioNumber, $phoneNumber,"", $mediaURL);
+    }
+}
+
 //Outputs Twilio Response
 function outputTwilioResponse($responseText) {
     $response = new Services_Twilio_Twiml();

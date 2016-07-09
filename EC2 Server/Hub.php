@@ -1,7 +1,7 @@
 <?php
 require('twilio-php/Services/Twilio.php'); //Twilio Helper Library
-require('HelperFunctions.php');
-require('Database.php');
+require('HelperFunctions.php'); //Own Helper Library
+require('Database.php'); //Initialize Database Access
 
 //Sample Data --------- FOR TESTING ONLY
 $weAreTesting = false;
@@ -20,8 +20,9 @@ $mediaExists = $_REQUEST['NumMedia'] > 0;
 if ($mediaExists) $body .= ("Picture URL: ".$_REQUEST['MediaUrl0']);
 //End of text message data retrieval
 
-//Initialize variable to hold response data
+//Initialize variables to hold response data
 $responseText = "";
+$responseMedia = ""; // --------------------STILL NEEDS TO BE IMPLEMENTED
 
 //Start of preference retrieval
 $allPreferences = getPreferences($mysqli);
@@ -41,6 +42,11 @@ $sessionInfo = $allPreferences[11];
 
 //Send Text Message Data to Node Polling Server w/o hashtags
 sendToNode(removeTags($body), $number);
+
+//Forward Text Message if applicable
+if ($autoForwardPref[1] == "On") {
+    sendSMS($autoForwardPref[2], "Text from $number: $body");
+}
 
 //Check to see if phone number is already in contacts table
 $contactExists = contactExists($number, $mysqli);
