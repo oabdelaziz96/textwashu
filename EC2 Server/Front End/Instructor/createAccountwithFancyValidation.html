@@ -1,0 +1,25 @@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
+<script src="guardian/js/jquery.guardian-1.0.min.js"></script>
+<script>$(document).ready(function() { $('#signupform').guardian(); });</script>
+<link rel="stylesheet" href="guardian/css/guardian.css">
+
+<form id="signupform" action="javascript:alert('Validation Successful')">
+    <div> 
+        <label>Name<span class="red">*</span></label>
+        <input type="text" name="name" data-pattern="alpha" required="required" data-empty-message="Please provide a name." data-error-message="Please provide a valid name.">
+    </div>
+     
+    <div>
+        <label>Email<span class="red">*</span></label>
+        <input type="email" name="email" required="required" data-empty-message="Please provide a email." data-error-message="Please provide a valid email.">
+    </div>
+     
+    <div>
+        <label>Phone</label>
+        <input type="tel" name="phone" data-error-message="Please provide a valid phone number.">
+    </div>
+     
+    <div> 
+        <input type="submit" name="submit" value="Submit">
+    </div>
+</form>

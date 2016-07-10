@@ -230,7 +230,7 @@ function detectAndShortenURLs($responseText) {
 }
 
 //Adds message to hub table
-function addMessageToHub($number, $body, $type, $responseText, $mysqli) {
+function addMessageToHub($number, $body, $type, $responseText, $mysqli) { //NEED TO CHANGE TO ORIGINAL/MODIFIED MESSAGE
     $stmt = $mysqli->prepare("insert into hub (phone_number, message, source, response) values (?, ?, ?, ?)");
     if(!$stmt){
         printf("Query Prep Failed: %s\n", $mysqli->error);
@@ -277,12 +277,20 @@ function sendSMS($phoneNumber, $message) {
 
 //Sends multimedia message to phone number
 function sendMMS($phoneNumber, $mediaURL) {
-    if (!(is_null($mediaURL) || ($mediaURL == ""))) {
-        $AccountSid = "ACdc1251a1762be46d5b9e5021d2954f57";
-        $AuthToken = "b620065bd7bd2ee1465a22ba5d0dd4ca";
-        $twilioNumber = "+13142548045";
-        $client = new Services_Twilio($AccountSid, $AuthToken);
-        $sms = $client->account->messages->sendMessage($twilioNumber, $phoneNumber,"", $mediaURL);
+    if (!(is_null($mediaURL) || ($mediaURL == ""))) {//If $mediaURL actually has a valude
+        
+        $urlRegex = '/(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})/';
+        $urlExists = preg_match($urlRegex, $mediaURL);
+  
+        if ($urlExists) {//If $mediaURL is actually a URL
+        
+            $AccountSid = "ACdc1251a1762be46d5b9e5021d2954f57";
+            $AuthToken = "b620065bd7bd2ee1465a22ba5d0dd4ca";
+            $twilioNumber = "+13142548045";
+            $client = new Services_Twilio($AccountSid, $AuthToken);
+            $mms = $client->account->messages->sendMessage($twilioNumber, $phoneNumber,"", $mediaURL);
+        
+        }
     }
 }
 

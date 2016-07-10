@@ -22,7 +22,6 @@ if ($mediaExists) $body .= ("Picture URL: ".$_REQUEST['MediaUrl0']);
 
 //Initialize variables to hold response data
 $responseText = "";
-$responseMedia = ""; // --------------------STILL NEEDS TO BE IMPLEMENTED
 
 //Start of preference retrieval
 $allPreferences = getPreferences($mysqli);
@@ -58,12 +57,14 @@ if (!$contactExists) {
     
     if ($firstTimePref[1] == "On") { //Send first time message if applicable
         $responseText = addMessage($responseText, $firstTimePref[2]);
+        sendMMS($number, $firstTimePref[3]);
     }
 }
 
 //Auto reply if applicable
 if ($autoReplyPref[1] == "On") {
     $responseText = addMessage($responseText, $autoReplyPref[2]);
+    sendMMS($number, $autoReplyPref[3]);
 }
 
 //Auto tag if applicable
@@ -151,6 +152,7 @@ if ($tagCheck) { //message has a hashtag
                         //Send archive reply if applicable
                         if ($arcTagPref[1] == "On") {
                             $responseText = addMessage($responseText, $arcTagPref[2]);
+                            sendMMS($number, $arcTagPref[3]);
                         }
                         break;
                 
@@ -165,6 +167,7 @@ if ($tagCheck) { //message has a hashtag
         //  then reply if the invalid tag preference is on
         if (!$mesHashtagExists && $invTagPref[1] == "On") {
             $responseText = addMessage($responseText, $invTagPref[2]);
+            sendMMS($number, $invTagPref[3]);
         }
         
         
@@ -199,6 +202,7 @@ if ($tagCheck) { //message has a hashtag
 //Reply if "reply to untagged" is on and message doesn't have a hashtag
 if (!$tagCheck && $noTagPref[1] == "On") {
     $responseText = addMessage($responseText, $noTagPref[2]);
+    sendMMS($number, $noTagPref[3]);
 }
 
 //Check regular expression and reply if applicable
@@ -217,7 +221,7 @@ if ($shortenURLPref[1] == "On") {
     $responseText = detectAndShortenURLs($responseText);
 }
 
-addMessageToHub($number, $body, $type, $responseText, $mysqli);
+addMessageToHub($number, $body, $type, $responseText, $mysqli); //NEED TO CHANGE TO ORIGINAL/MODIFIED MESSAGE
 
 outputTwilioResponse($responseText); //Responds to Twilio Request in Proper Format
 
