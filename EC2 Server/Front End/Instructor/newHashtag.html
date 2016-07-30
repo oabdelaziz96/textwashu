@@ -1,0 +1,13 @@
+<title>Create New Hashtag</title>
+<h1>Create New Hashtag</h1>
+<form action="newHashtag.php" method="POST" id="usrForm">
+Hashtag<br>
+<input type="text" value="#" name="hashtag">
+<br><br>Status<br>
+<input type="radio" name="status" id="Active" value="Active" checked="checked"> Active<br>
+<input type="radio" name="status" id="Archived" value="Archived"> Archived<br>
+<br><br>Reply Message<br>
+<textarea rows="4" cols="50" name="reply" form="usrForm"></textarea>
+<br><br>
+<button type="submit">Create</button>
+</form>

@@ -1,9 +1,12 @@
 <?php
 require_once('twilio-php/Services/Twilio.php'); //Twilio Helper Library
 
+//ini_set('display_errors', '1'); //display errors for debugging
+
 //Get variables from previous page 
 $firstName = $_POST['first_name'];
 $lastName = $_POST['last_name'];
+$courseName = $_POST['course_name'];
 $username = $_POST['username'];
 $pwd = $_POST['password'];
 $email = $_POST['email'];
@@ -14,13 +17,19 @@ $twilioAuth = $_POST['twilio_auth_token'];
 
 // Filter variables
 if( !preg_match('/^[A-Za-z ]{1,30}$/', $firstName) ){
-        $alertMessage =  "Invalid first name. First name should consist of letters and spaces only (no spaces/numbers), and must be between 1-30 characters.";
+        $alertMessage =  "Invalid first name. First name should consist of letters and spaces only (no numbers), and must be between 1-30 characters.";
         echo $alertMessage;
         exit;
 }
 
 if( !preg_match('/^[A-Za-z ]{1,30}$/', $lastName) ){
-        $alertMessage =  "Invalid last name. Last name should consist of letters and spaces only (no spaces/numbers), and must be between 1-30 characters.";
+        $alertMessage =  "Invalid last name. Last name should consist of letters and spaces only (no numbers), and must be between 1-30 characters.";
+        echo $alertMessage;
+        exit;
+}
+
+if( !preg_match('/^[A-Za-z 0-9]{1,30}$/', $courseName) ){
+        $alertMessage =  "Invalid course name. Course name should consist of letters, numbers, and spaces only, and must be between 1-30 characters.";
         echo $alertMessage;
         exit;
 }
@@ -88,6 +97,23 @@ if($twilioNumberAlreadyExists) {
 	exit; 
 }
 
+//Check if course name is already in the database
+$stmt = $mysqli->prepare("select course_name from accounts where course_name = '$courseName'");
+if(!$stmt){
+	printf("Query Prep Failed: %s\n", $mysqli->error);
+	exit;
+} 
+$stmt->execute();
+$stmt->bind_result($output);
+$stmt->fetch();
+$courseNameAlreadyExists = !is_null($output);
+$stmt->close();
+if($courseNameAlreadyExists) {
+   echo "Course name already registered. Please pick a different course name.";
+	header("refresh: 2; url=createAccount.html");
+	exit; 
+}
+
 //Get sid for twilio phone number
 $twilioServicesClient = new Services_Twilio($twilioSID, $twilioAuth);
 
@@ -112,19 +138,22 @@ try {
 
 //Set SMS webhook to Twilio Hub server
 $twilioClientNumber = $twilioServicesClient->account->incoming_phone_numbers->get($twilioNumberSID);
-$smsURL = "http://ec2-52-91-18-209.compute-1.amazonaws.com/~oabdelaziz/participation/Hub.php";
+$smsURL = "http://textwashu.com/TwilioHub.php";
+$voiceURL = "http://textwashu.com/TwilioCalls.xml";
 $twilioClientNumber->update(array(
-        "SmsUrl" => $smsURL
+        "SmsUrl" => $smsURL,
+		"VoiceUrl" => $voiceURL
     )); //Known bug -> If number has a TwiML assigned to it, it will not be overridden
 
 
 //Insert user info into account table
-$stmt = $mysqli->prepare("insert into accounts (first_name, last_name, username, email, password, twilio_phone_number, twilio_account_sid, twilio_auth_token) values (?, ?, ?, ?, ?, ?, ?, ?)");
+$stmt = $mysqli->prepare("insert into accounts (first_name, last_name, course_name, username, email, password, twilio_phone_number, twilio_account_sid, twilio_auth_token, nodeCode) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 if(!$stmt){
 	printf("Query Prep Failed: %s\n", $mysqli->error);
 	exit;
 }
-$stmt->bind_param('ssssssss', $firstName, $lastName, $username, $pwd, $email, $twilioNumber, $twilioSID, $twilioAuth);
+$autoGenNodeCode = substr(uniqid(),0,10);
+$stmt->bind_param('ssssssssss', $firstName, $lastName, $courseName, $username, $email, $pwd, $twilioNumber, $twilioSID, $twilioAuth, $autoGenNodeCode);
 $stmt->execute();
 $stmt->close();
 $mysqli->close();
@@ -247,9 +276,10 @@ $mysqli->close();
 
 //Confirmation and session start
 session_start();
-$_SESSION['twilioNumber'] = $twilioNumber;
-echo "Successfully Created New User and Logged In";
-//header("refresh: 2; url=mainmenu.php");
+$_SESSION['name'] = $firstName;
+$_SESSION['number'] = $twilioNumber;
+echo "You're all set $firstName! Taking you to the main menu...";
+header("refresh: 2; url=mainMenu.php");
 exit;
  
 ?>

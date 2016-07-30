@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Live Poll</title>
+      <div id="buttonHolder"></div>
+      <H1 align="center" id="title"></H1>
+      
+      <script src="/auth.js"></script>
+      <script src="/socket.io/lib/socket.io.js"></script>
+      <script src="/highcharts.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+      <script type ="text/javascript">
+         
+         var chart;
+         var chartdata = [0, 0, 0, 0, 0];
+         var labels = ["a", "b", "c", "d", "e"];
+         
+         function newChart() {
+            chart = new Highcharts.Chart({
+            chart: {
+            renderTo: 'chart',
+            type: 'bar'
+            },
+             
+            title: {
+            text: ''
+            },
+            
+            xAxis: {
+               categories: labels,
+               labels: {
+                  style: {
+                     fontWeight: 'bold',
+                     fontSize:'20px'
+                  }
+               }
+            },
+            
+            yAxis: {
+               allowDecimals: false,
+               labels: {
+                   style: {
+                     fontWeight: 'bold',
+                     fontSize:'15px'
+                  }
+               },
+               title: {
+                   text: ''
+               }
+           },
+            
+            series: [{name: 'Votes', data: chartdata}]   
+             
+            });
+         }
+         
+         function setTitle(pNum) {     
+            $("#title").text("Text " + pNum + " to Vote");
+            $('#buttonHolder').append("<input id='clear' type='button' value='Clear' style='float: right;'>");
+            $('#buttonHolder').append("<input id='sendToOther' type='button' value='Texts' style='float: left;'>");
+            $('#hrHolder').prepend("<hr>");
+            newChart();
+            
+            $("#clear").click(function(){
+               for (i = 0; i < labels.length; i++) {
+                  chart.series[0].data[i].update(0);
+               }
+            });
+            
+            $("#sendToOther").click(function(){
+               window.open('http://live.textwashu.com/texts', '_blank');
+            });
+         }
+         
+         function processSocketMessage(data) {
+            var newVoteMes = data['message'].substring(0,1).toLowerCase(); //Get first character from message
+            var index = labels.indexOf(newVoteMes);
+            
+            if (index !== -1) {
+               var votes = chart.series[0].data[index].y;
+               chart.series[0].data[index].update(votes+1);
+            }
+         }
+ 
+      </script>
+   </head>
+   <body>
+      <div id="hrHolder"></div>
+      <br>
+      <div id="chart" style="min-width: 400px; height: 500px; margin: 0 auto"></div>
+   </body>
+</html>

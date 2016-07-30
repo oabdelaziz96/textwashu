@@ -34,7 +34,7 @@ expressApp.get('/', function(req, res){});
 //POST request handler, which is where texts come in
 expressApp.post('/', function(req, res){
 
-	io.sockets.emit("message_to_client",{message:req.body.body }) // broadcast the message to other users
+	io.sockets.emit("message_to_client",{message:req.body.body }); // broadcast the message to other users
     res.end('Message Received');
     
 });

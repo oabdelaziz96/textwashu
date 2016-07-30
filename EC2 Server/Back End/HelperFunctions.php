@@ -1,8 +1,52 @@
 <?php
+//Connects to given database
+function setMysqlDatabase($databaseName) {
+    $mysqli = new mysqli('localhost', 'participationUsr', 'WashU330', $databaseName);
+ 
+    if($mysqli->connect_errno) {
+        printf("Connection Failed: %s\n", $mysqli->connect_error);
+        exit;
+    }
+    
+    return $mysqli;
+}
 
-//Sends body and phone number of incoming messages to Node.js Server
-function sendToNode($body, $number) {
-    $dataToNode = array("body" => $body, "number" => $number);                                                                    
+//Authenticates request and returns array containing a boolean and auth token
+function authenticateRequest($mysqli, $twilioNumber, $twilioAccountSID) {
+    
+    //Check for valid Twilio Number
+    if(!preg_match('/^[0-9]{10}$/', $twilioNumber) ){
+        return array(false);
+    }
+    
+    //Check for valid Twilio SID
+    if(!preg_match('/^AC[a-zA-z0-9]{32}$/', $twilioAccountSID) ){
+        return array(false);
+    }
+    
+    //Check in DB
+    $sql = "select twilio_auth_token from accounts where twilio_phone_number = '$twilioNumber' and twilio_account_sid = '$twilioAccountSID'";
+    $stmt = $mysqli->prepare($sql);
+    if(!$stmt){
+        printf("Query Prep Failed: %s\n", $mysqli->error);
+        exit;
+    } 
+    $stmt->execute();
+    $stmt->bind_result($output);
+    $stmt->fetch();
+    $stmt->close();
+    
+    if (is_null($output)) {
+        return array(false);
+    } else {
+        return array(true, $output);
+    }
+    
+}
+
+//Sends body and phone number of incoming messages to Node.js Server //CHANGED/UPDATED
+function sendToNode($body, $number, $twilioNumber) {
+    $dataToNode = array("body" => $body, "number" => $number, "twilioNumber" => $twilioNumber);                                                                    
     $data_string_to_node = json_encode($dataToNode);
     $nodeServerURL = 'http://localhost:6543';
     $ch = curl_init($nodeServerURL);
@@ -230,13 +274,13 @@ function detectAndShortenURLs($responseText) {
 }
 
 //Adds message to hub table
-function addMessageToHub($number, $body, $type, $responseText, $mysqli) { //NEED TO CHANGE TO ORIGINAL/MODIFIED MESSAGE
-    $stmt = $mysqli->prepare("insert into hub (phone_number, message, source, response) values (?, ?, ?, ?)");
+function addMessageToHub($number, $orgMessage, $modMessage, $type, $responseText, $mysqli) { //CHANGED/UPDATED
+    $stmt = $mysqli->prepare("insert into hub (phone_number, original_message, modified_message, source, response) values (?, ?, ?, ?, ?)");
     if(!$stmt){
         printf("Query Prep Failed: %s\n", $mysqli->error);
         exit;
     }
-    $stmt->bind_param('ssss', $number, $body, $type, $responseText);
+    $stmt->bind_param('sssss', $number, $orgMessage, $modMessage, $type, $responseText);
     $stmt->execute();
     $stmt->close();
 }
@@ -265,18 +309,15 @@ function numberExistsInSession($number, $hashtag, $mysqli) {
 }
 
 //Sends text message to phone number
-function sendSMS($phoneNumber, $message) {
+function sendSMS($phoneNumber, $message, $twilioNumber, $twilioAccountSid, $twilioAuth) { //CHANGED/UPDATED
     if (!(is_null($message) || ($message == ""))) {
-        $AccountSid = "ACdc1251a1762be46d5b9e5021d2954f57";
-        $AuthToken = "b620065bd7bd2ee1465a22ba5d0dd4ca";
-        $twilioNumber = "+13142548045";
-        $client = new Services_Twilio($AccountSid, $AuthToken);
+        $client = new Services_Twilio($twilioAccountSid, $twilioAuth);
         $sms = $client->account->messages->sendMessage($twilioNumber, $phoneNumber, $message);
     }
 }
 
 //Sends multimedia message to phone number
-function sendMMS($phoneNumber, $mediaURL) {
+function sendMMS($phoneNumber, $mediaURL, $twilioNumber, $twilioAccountSid, $twilioAuth) { //CHANGED/UPDATED
     if (!(is_null($mediaURL) || ($mediaURL == ""))) {//If $mediaURL actually has a valude
         
         $urlRegex = '/(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})/';
@@ -284,10 +325,7 @@ function sendMMS($phoneNumber, $mediaURL) {
   
         if ($urlExists) {//If $mediaURL is actually a URL
         
-            $AccountSid = "ACdc1251a1762be46d5b9e5021d2954f57";
-            $AuthToken = "b620065bd7bd2ee1465a22ba5d0dd4ca";
-            $twilioNumber = "+13142548045";
-            $client = new Services_Twilio($AccountSid, $AuthToken);
+            $client = new Services_Twilio($twilioAccountSid, $twilioAuth);
             $mms = $client->account->messages->sendMessage($twilioNumber, $phoneNumber,"", $mediaURL);
         
         }

@@ -1,4 +1,5 @@
 <head>
+<title>Login</title>
 <link href="vendor/twbs/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="login.css">
 </head>
@@ -9,15 +10,14 @@
             <div class="account-wall">
                 <img class="profile-img" src="https://sites.wustl.edu/publicaffairs/files/2015/07/Washington_University_Monogram_Open1c200-01-17zuofc.png"
                     alt="">
-                <form action="signingin.php" method="POST" class="form-signin">
-                <input type="text" class="form-control" placeholder="Email" required autofocus>
-                <input type="password" class="form-control" placeholder="Password" required>
+                <form action="signingIn.php" method="POST" class="form-signin">
+                <input type="text" class="form-control" placeholder="Username" name="username" required autofocus>
+                <input type="password" class="form-control" placeholder="Password" name="password" required>
                 <button class="btn btn-lg btn-primary btn-block" type="submit">
                     Sign in</button>
                 </form>
             </div>
             <a href="createAccount.html" class="text-center new-account">Create an account </a>
         </div>
-        Need to add validation and fix image
     </div>
 </div>
