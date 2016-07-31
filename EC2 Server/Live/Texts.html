@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Live Texts</title>
+      <div id="buttonHolder"></div>
+      <H1 align="center" id="title"></H1>
+      
+      <script src="/socket.io/socket.io.js"></script>
+      <script src="/auth.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+      <script type ="text/javascript">
+         
+         function setTitle(pNum) {     
+            $("#title").text("Text your Questions to " + pNum);
+            $('#buttonHolder').append("<input id='clear' type='button' value='Clear' style='float: right;'>");
+            $('#buttonHolder').append("<input id='sendToOther' type='button' value='Poll' style='float: left;'>");
+            $('#buttonHolder').append("<input id='sendToMenu' type='button' value='Main Menu' style='float: left;'>");
+            $('#chatlog').prepend("<hr>");
+            
+            $("#clear").click(function(){
+               $('#chatlog').empty();
+               $('#chatlog').prepend("<hr>");
+            });
+            
+            $("#sendToOther").click(function(){
+               window.open('http://live.textwashu.com/poll', '_blank');
+            });
+            
+            $("#sendToMenu").click(function(){
+               window.open('http://instructor.textwashu.com/mainMenu.php', '_self');
+            });
+         }
+         
+         function processSocketMessage(data) {
+            $('#chatlog').prepend($('<span>').text(data['message']).html());
+            $('#chatlog').prepend("<hr>");
+         }
+ 
+      </script>
+   </head>
+   <body>
+      <div id="chatlog" style="font-size:20px"></div>
+   </body>
+</html>
