@@ -13,7 +13,7 @@ $twilioNumber = $_SESSION['number'];
 
 
 // Filter variable
-if( !preg_match('/^(texts|poll)$/', $location) ){
+if( !preg_match('/^(texts|poll|quiz)$/', $location) ){
         $alertMessage =  "Invalid location.";
         echo $alertMessage;
         exit;

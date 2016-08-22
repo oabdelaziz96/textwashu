@@ -37,10 +37,15 @@ $array = array();
 $cur = 0;
 
 while($stmt->fetch()) {
+	$response = stripslashes(str_replace('\n---\n', " --- ", htmlspecialchars($response)));
+	
 	$phoneLink = '<a href="viewContacts.php?search='.urlencode($pNum).'">'.htmlspecialchars($pNum).'</a>';
-	$array[$cur] = array($id, htmlspecialchars($orgMsg), htmlspecialchars($modMsg), $phoneLink, htmlspecialchars($response), $source, $time);
+	$array[$cur] = array($id, htmlspecialchars(stripslashes($orgMsg)), htmlspecialchars(stripslashes($modMsg)), $phoneLink, $response, $source, $time);
 	$cur = $cur + 1;
 }
+
+$stmt->close();
+$mysqli->close();
 
 
 //Confirmation

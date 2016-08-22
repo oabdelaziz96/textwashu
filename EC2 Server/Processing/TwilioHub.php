@@ -2,13 +2,14 @@
 require('../HelperFiles/twilio-php/Services/Twilio.php'); //Twilio Helper Library
 require('HelperFunctions.php'); //Own Helper Library
 require('../Sensitive/database.php'); //Database Access
+//ini_set('display_errors', '1'); //display errors for debugging
 
 //Sample Data --------- FOR TESTING ONLY
 $weAreTesting = false;
 if ($weAreTesting) {
     $_REQUEST['Body'] = "C";
     $_REQUEST['From'] = "+11234567890";
-    $_REQUEST['To'] = "+13142548045";
+    $_REQUEST['To'] = "+16302503186";
     $_REQUEST['AccountSid'] = "ACdc1251a1762be46d5b9e5021d2954f57";
     $_REQUEST['NumMedia'] = 0;
 }
@@ -26,7 +27,7 @@ if ($mediaExists) $body .= ("Picture URL: ".$_REQUEST['MediaUrl0']);
 
 //Authenticate Request
 $mysqli = setMysqlDatabase('participationDB');
-$authorizedReq = authenticateRequest($mysqli, $twilioNumber, $twilioAccountSID);
+$authorizedReq = authenticateRequest($mysqli, $fromNumber, $twilioNumber, $twilioAccountSID);
 
 if ($authorizedReq[0]) { //request is authorized
     $twilioAuthToken = $authorizedReq[1];
@@ -50,6 +51,7 @@ if ($authorizedReq[0]) { //request is authorized
     $shortenURLPref = $allPreferences[9];
     $hashTextPref = $allPreferences[10];
     $sessionInfo = $allPreferences[11];
+    $remindProfilePref = $allPreferences[12];
     //End of preference retrieval
     
     //Send Text Message Data to Node Polling Server w/o hashtags
@@ -65,8 +67,8 @@ if ($authorizedReq[0]) { //request is authorized
     
     //If phone number isn't already in contacts table, then add it
     //  And if the pref is enabled, reply with a first time message
-    if (!$contactExists) {
-        addNumberToContacts($fromNumber, $mysqli);
+    if (!$contactExists[0]) {
+        addNumberToContacts($twilioNumber, $fromNumber, $mysqli);
         
         if ($firstTimePref[1] == "On") { //Send first time message if applicable
             $responseText = addMessage($responseText, $firstTimePref[2]);
@@ -221,8 +223,17 @@ if ($authorizedReq[0]) { //request is authorized
     //Check regular expression and reply if applicable
     if ($checkRegexPref[1] == "On") {
         
-        if (!preg_match($checkRegexPref[2], $body)) {
+        if (!preg_match('/'.$checkRegexPref[2].'/', $body)) {
             $responseText = addMessage($responseText, $checkRegexPref[3]);
+        }
+    }
+    
+    //Remind user to fill out profile if applicable
+    if ($remindProfilePref[1] == "On" && $contactExists[0]) {
+        
+        //Check if profile has been filled out
+        if ($contactExists[1] == "n") { //first letter of auth_code is "n"
+            $responseText = addMessage($responseText, $remindProfilePref[2]); 
         }
     }
     

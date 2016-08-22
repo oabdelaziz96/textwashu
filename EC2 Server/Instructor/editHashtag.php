@@ -14,12 +14,14 @@ if ($_GET['hashtag'] == "") {//Not a GET request
 		$id = strtolower($_POST['hashtag']); //Lowercase hashtag off the bat
 		$status = $_POST['status'];
 		$response = $_POST['reply'];
+		$function = "edited";
 		
 } else { //Is a GET request to archive
 		
 		$id = $_GET['hashtag'];
 		$status = "Archived";
 		$response = $_GET['reply'];
+		$function = "archived";
 }
 
 
@@ -78,7 +80,7 @@ $stmt->close();
 $mysqli->close();
 
 //Confirmation and session start
-echo "Successfully edited $id hashtag";
+echo "Successfully $function $id hashtag";
 header("refresh: 1; url=manageHashtags.php");
 exit;
  

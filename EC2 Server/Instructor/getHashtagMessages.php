@@ -70,12 +70,16 @@ $array = array();
 $cur = 0;
 
 while($stmt->fetch()) {
+	$message = stripslashes($message);
+	
 	$phoneLink = '<a href="viewContacts.php?search='.urlencode($phone_number).'">'.htmlspecialchars($phone_number).'</a>';
 	$msgLink = '<a href="viewAllMessages.php?search='.urlencode($message." ".$phone_number." ".$timestamp).'">'.htmlspecialchars($message).'</a>';
 	$array[$cur] = array($msgLink, $phoneLink, htmlspecialchars($timestamp));
 	$cur = $cur + 1;
 }
 
+$stmt->close();
+$mysqli->close();
 
 //Confirmation
  

@@ -7,23 +7,40 @@ function showContacts(event){
         var jsonData = JSON.parse(event.target.responseText); // parse the JSON into a JavaScript object
         if(jsonData.success){  // in PHP, this was the "success" key in the associative array; in JavaScript, it's the .success property of jsonData
             var dataArray = jsonData.dataArray;
+            var columnsArray = [{ title: "Phone Number" }];
+            
+            if (jsonData.preferences.enableName) {
+                columnsArray.push({ title: "First Name" });
+                columnsArray.push({ title: "Last Name" });
+            }
+            
+            if (jsonData.preferences.enableEmail) {
+                columnsArray.push({ title: "Email" });
+            }
+            
+            if (jsonData.preferences.enableWuKey) {
+                columnsArray.push({ title: "WUSTL Key" });
+            }
+            
+            if (jsonData.preferences.enableID) {
+                columnsArray.push({ title: "ID Number" });
+            }
+            
+            columnsArray.push({ title: "Options" });
             
             $(document).ready(function() {
                 $('#table').DataTable( {
                     data: dataArray,
-                    columns: [
-                        { title: "Phone Number" },
-                        { title: "First Name" },
-                        { title: "Last Name" },
-                        { title: "Email" },
-                        { title: "WUSTL Key" },
-                        { title: "ID Number" }
-                    ]
+                    columns: columnsArray
                 } );
             
             var table = $('#table').DataTable();
             table.search( searchField ).draw();
             $('input[type=search]').val('');
+            
+            $('.confirmation').on('click', function () {
+                return confirm('You are about to delete this contact and all associated text messgaes. Are you sure you want to delete this contact?');
+            });
             
             } );
             

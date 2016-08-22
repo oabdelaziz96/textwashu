@@ -17,7 +17,7 @@ if (isset($_SESSION['number'])) {
 //Connect to DB
 $mysqli = setMysqlDatabase($number);
 
-$query = 'select name, description, status, arg1, arg2, arg1_desc, arg2_desc, number from preferences where number < 12';
+$query = 'select name, description, status, arg1, arg2, arg1_desc, arg2_desc, number from preferences where number <= 11 OR number = 13 OR number = 14;';
 
 $stmt = $mysqli->prepare($query);
 if(!$stmt){
@@ -37,13 +37,15 @@ $array = array();
 $cur = 0;
 
 while($stmt->fetch()) {
-	$nameLink = '<a href="editPreferenceForm.php?name='.urlencode($name).'&prefDesc='.urlencode($desc).'&status='.urlencode($status).'&arg1='.urlencode(htmlspecialchars($arg1)).'&arg2='.urlencode(htmlspecialchars($arg2));
+	$nameLink = '<a href="editPreferenceForm.php?name='.urlencode($name).'&prefDesc='.urlencode($desc).'&status='.urlencode($status).'&arg1='.urlencode(htmlspecialchars(stripslashes($arg1))).'&arg2='.urlencode(htmlspecialchars(stripslashes($arg2)));
 	$nameLink.= '&arg1Desc='.urlencode(htmlspecialchars($arg1_desc)).'&arg2Desc='.urlencode(htmlspecialchars($arg2_desc)).'&number='.urlencode($num).'">'.$name.'</a>';
 	
-	$array[$cur] = array($nameLink, htmlspecialchars($status), htmlspecialchars($arg1), htmlspecialchars($arg2));
+	$array[$cur] = array($nameLink, htmlspecialchars($status), htmlspecialchars(stripslashes($arg1)), htmlspecialchars(stripslashes($arg2)));
 	$cur = $cur + 1;
 }
 
+$stmt->close();
+$mysqli->close();
 
 //Confirmation
  

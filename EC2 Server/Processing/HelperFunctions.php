@@ -1,7 +1,12 @@
 <?php
 
 //Authenticates request and returns array containing a boolean and auth token
-function authenticateRequest($mysqli, $twilioNumber, $twilioAccountSID) {
+function authenticateRequest($mysqli, $fromNumber, $twilioNumber, $twilioAccountSID) {
+    
+    //Check for valid From Number
+    if(!preg_match('/^[0-9]{10}$/', $fromNumber) ){
+        return array(false);
+    }
     
     //Check for valid Twilio Number
     if(!preg_match('/^[0-9]{10}$/', $twilioNumber) ){
@@ -33,7 +38,7 @@ function authenticateRequest($mysqli, $twilioNumber, $twilioAccountSID) {
     
 }
 
-//Sends body and phone number of incoming messages to Node.js Server //CHANGED/UPDATED
+//Sends body and phone number of incoming messages to Node.js Server 
 function sendToNode($body, $number, $twilioNumber) {
     $dataToNode = array("body" => $body, "number" => $number, "twilioNumber" => $twilioNumber);                                                                    
     $data_string_to_node = json_encode($dataToNode);
@@ -53,7 +58,7 @@ function sendToNode($body, $number, $twilioNumber) {
 
 //Gets preferences and returns them in an array
 function getPreferences($mysqli) {
-    $query = 'select name, status, arg1, arg2 from preferences ORDER BY number ASC';
+    $query = 'select name, status, arg1, arg2 from preferences where number < 14 ORDER BY number ASC';
     $stmt = $mysqli->prepare($query);
     if(!$stmt){
         printf("Query Prep Failed: %s\n", $mysqli->error);
@@ -63,15 +68,15 @@ function getPreferences($mysqli) {
     $stmt->bind_result($name, $status, $arg1, $arg2);
     $arr = array();
     while($stmt->fetch()) {
-        $arr[] = array($name, $status, $arg1, $arg2);
+        $arr[] = array($name, $status, stripslashes($arg1), stripslashes($arg2));
     }
     $stmt->close();
     return $arr;
 }
 
-//Checks to see if contact already exists in contact table and returns a boolean
+//Checks to see if contact already exists in contact table and returns an array with a boolean and the first letter of the auth_code if applicable
 function contactExists($number, $mysqli) {
-    $stmt = $mysqli->prepare("select phone_number from contacts where phone_number = '$number'");
+    $stmt = $mysqli->prepare("select auth_code from contacts where phone_number = '$number'");
     if(!$stmt){
         printf("Query Prep Failed: %s\n", $mysqli->error);
         exit;
@@ -79,19 +84,29 @@ function contactExists($number, $mysqli) {
     $stmt->execute();
     $stmt->bind_result($output);
     $stmt->fetch();
-    $result = !is_null($output);
     $stmt->close();
-    return $result;
+    
+    if (is_null($output)) {
+        return array(false);
+    } else {
+        return array(true, substr($output, 0, 1));
+    }
+
 }
 
 //Adds Phone Number into Contacts Table
-function addNumberToContacts($number, $mysqli) {
-    $stmt = $mysqli->prepare("insert into contacts (phone_number) values (?)");
+function addNumberToContacts($classNum, $number, $mysqli) {
+    
+    //Generate auth_code and profile_url
+    $authCode = "n".substr(uniqid(),0,9);
+    $profileURL = "http://student.textwashu.com/editProfile.php?cN=$classNum&sN=$number&aC=$authCode";
+    
+    $stmt = $mysqli->prepare("insert into contacts (phone_number, auth_code, profile_url) values (?, ?, ?)");
     if(!$stmt){
         printf("Query Prep Failed: %s\n", $mysqli->error);
         exit;
     }
-    $stmt->bind_param('s', $number);
+    $stmt->bind_param('sss', $mysqli->real_escape_string($number), $authCode, $profileURL);
     $stmt->execute();
     $stmt->close();
 }
@@ -124,7 +139,7 @@ function getHashtags($mysqli) {
     $stmt->bind_result($id, $status, $response);
     $arr = array();
     while($stmt->fetch()) {
-        $arr[] = array($id, $status, $response);
+        $arr[] = array($id, $status, stripslashes($response));
     }
     $stmt->close();
     return $arr;
@@ -137,7 +152,7 @@ function addMessageToActiveTable($hashtag, $number, $body, $mysqli) {
         printf("Query Prep Failed: %s\n", $mysqli->error);
         exit;
     }
-    $stmt->bind_param('ss', $number, $body);
+    $stmt->bind_param('ss', $mysqli->real_escape_string($number), $mysqli->real_escape_string($body));
     $stmt->execute();
     $stmt->close();
 }
@@ -149,7 +164,7 @@ function addPhoneNumberToSessionTable($hashtag, $number, $mysqli) {
         printf("Query Prep Failed: %s\n", $mysqli->error);
         exit;
     }
-    $stmt->bind_param('s', $number);
+    $stmt->bind_param('s', $mysqli->real_escape_string($number));
     $stmt->execute();
     $stmt->close();
 }
@@ -159,7 +174,7 @@ function addMessageToSessionTable($number, $body, $sessionInfo, $mysqli) {
     $tableName = $sessionInfo[2];
     $questionNumber = $sessionInfo[3];
     $answer = strtolower($body);
-    $stmt = $mysqli->prepare('UPDATE `'.$tableName.'` SET '.$questionNumber.' = "'.$answer.'" WHERE phone_number = '.$number);
+    $stmt = $mysqli->prepare('UPDATE `'.$tableName.'` SET '.$questionNumber.' = "'.$mysqli->real_escape_string($answer).'" WHERE phone_number = '.$mysqli->real_escape_string($number));
     if(!$stmt){
         printf("Query Prep Failed: %s\n", $mysqli->error);
         exit;
@@ -263,13 +278,13 @@ function detectAndShortenURLs($responseText) {
 }
 
 //Adds message to hub table
-function addMessageToHub($number, $orgMessage, $modMessage, $type, $responseText, $mysqli) { //CHANGED/UPDATED
+function addMessageToHub($number, $orgMessage, $modMessage, $type, $responseText, $mysqli) {
     $stmt = $mysqli->prepare("insert into hub (phone_number, original_message, modified_message, source, response) values (?, ?, ?, ?, ?)");
     if(!$stmt){
         printf("Query Prep Failed: %s\n", $mysqli->error);
         exit;
     }
-    $stmt->bind_param('sssss', $number, $orgMessage, $modMessage, $type, $responseText);
+    $stmt->bind_param('sssss', $mysqli->real_escape_string($number), $mysqli->real_escape_string($orgMessage), $mysqli->real_escape_string($modMessage), $type, $mysqli->real_escape_string($responseText));
     $stmt->execute();
     $stmt->close();
 }
@@ -298,24 +313,34 @@ function numberExistsInSession($number, $hashtag, $mysqli) {
 }
 
 //Sends text message to phone number
-function sendSMS($phoneNumber, $message, $twilioNumber, $twilioAccountSid, $twilioAuth) { //CHANGED/UPDATED
+function sendSMS($phoneNumber, $message, $twilioNumber, $twilioAccountSid, $twilioAuth) { 
     if (!(is_null($message) || ($message == ""))) {
         $client = new Services_Twilio($twilioAccountSid, $twilioAuth);
-        $sms = $client->account->messages->sendMessage($twilioNumber, $phoneNumber, $message);
+        
+        try {
+            
+            $sms = $client->account->messages->sendMessage($twilioNumber, $phoneNumber, $message);
+        
+        } catch (Services_Twilio_RestException $e) {} //wasn't able to send SMS   
     }
 }
 
 //Sends multimedia message to phone number
-function sendMMS($phoneNumber, $mediaURL, $twilioNumber, $twilioAccountSid, $twilioAuth) { //CHANGED/UPDATED
+function sendMMS($phoneNumber, $mediaURL, $twilioNumber, $twilioAccountSid, $twilioAuth) { 
     if (!(is_null($mediaURL) || ($mediaURL == ""))) {//If $mediaURL actually has a valude
         
-        $urlRegex = '/(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})/';
+        $urlRegex = '/^(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})$/';
         $urlExists = preg_match($urlRegex, $mediaURL);
   
         if ($urlExists) {//If $mediaURL is actually a URL
         
             $client = new Services_Twilio($twilioAccountSid, $twilioAuth);
-            $mms = $client->account->messages->sendMessage($twilioNumber, $phoneNumber,"", $mediaURL);
+            
+            try {
+            
+                $mms = $client->account->messages->sendMessage($twilioNumber, $phoneNumber,"", $mediaURL);
+            
+            } catch (Services_Twilio_RestException $e) {} //wasn't able to send MMS
         
         }
     }

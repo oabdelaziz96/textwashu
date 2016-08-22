@@ -11,6 +11,7 @@ function showAllMessages(event){
             $(document).ready(function() {
                 $('#table').DataTable( {
                     data: dataArray,
+                    "order": [[ 6, "desc" ]],
                     columns: [
                         { title: "#" },
                         { title: "Original Message" },

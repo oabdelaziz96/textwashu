@@ -37,6 +37,8 @@ $array = array();
 $cur = 0;
 
 while($stmt->fetch()) {
+	$response = stripslashes($response);
+	
 	$editLink = '<a href="editHashtagForm.php?hashtag='.urlencode($id).'&status='.urlencode($status).'&response='.urlencode($response).'">Edit</a>';
 	$deleteLink = '<a href="deleteHashtag.php?hashtag='.urlencode($id).'" class="confirmation">Delete</a>';
 	$archiveLink = '<a href="editHashtag.php?hashtag='.urlencode($id).'&reply='.urlencode($response).'">Archive</a>';
@@ -52,6 +54,8 @@ while($stmt->fetch()) {
 	$cur = $cur + 1;
 }
 
+$stmt->close();
+$mysqli->close();
 
 //Confirmation
  

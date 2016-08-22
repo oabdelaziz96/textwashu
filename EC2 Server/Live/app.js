@@ -25,6 +25,10 @@ var mysql = require("mysql");
     res.sendfile('Polls.html');
   });
   
+  app.get('/quiz', function(req, res){ //Live Poll Page
+    res.sendfile('Quiz.html');
+  });
+  
 //User auth:
   app.get('/crossLogin', function(req, res){ //Backend processing of login request from php
     var phoneNumber = req.query.phoneNumber;
@@ -144,6 +148,10 @@ var mysql = require("mysql");
   
   app.get('/pollScripts.js', function(req, res){ //Poll Script
     res.sendfile('pollScripts.js');
+  });
+  
+  app.get('/quizScripts.js', function(req, res){ //Quiz Script
+    res.sendfile('quizScripts.js');
   });
   
 

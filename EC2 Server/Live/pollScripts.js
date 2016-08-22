@@ -124,8 +124,6 @@
             
             //Check if phone number already participated
             if (curPhoneNumbers.indexOf(incomingNumber) == -1) { //phone number hasn't participated
-            
-               curPhoneNumbers.push(incomingNumber);
                
                var newVoteMes = data['message'].substring(0,1).toUpperCase(); //Get first character from message
                var index = labels.indexOf(newVoteMes);
@@ -133,6 +131,7 @@
                if (index !== -1) {
                   var votes = chart.series[0].data[index].y;
                   chart.series[0].data[index].update(votes+1);
+                  curPhoneNumbers.push(incomingNumber);
                }
             }
          }
