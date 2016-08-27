@@ -16,6 +16,10 @@ $status = $_POST['status'];
 $arg1 = $_POST['arg1'];
 $arg2 = $_POST['arg2'];
 
+//Replace new line html with new line symbol
+$arg1 = str_replace("\r\n", "*nL*", $arg1);
+$arg2 = str_replace("\r\n", "*nL*", $arg2);
+
 // Filter primary variables that we can 
 if( !preg_match('/^[1-9]$|^[1-9][0134]$/', $prefNum) ){ //Request didn't come in with preference number
         $alertMessage =  "An error occured.";
@@ -45,9 +49,6 @@ if ($status == "On") { //If we're turning a preference on, then check the regex
 		$stmt->fetch();
 		$stmt->close();
 		
-		//Temp solve for URL Regex
-		//if ($arg2_regex == "URLREGEX") $arg2_regex = "^(?=.{1,255}$)(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})$|^$";
-
 		$arg1_regex = stripslashes($arg1_regex);
 		$arg2_regex = stripslashes($arg2_regex);
 		
@@ -73,6 +74,7 @@ if( !preg_match('/'.$arg2_regex.'/', $arg2) ){ //Argument 2 has invalid regex
         echo $alertMessage;
         exit;
 }
+
 
 //Update preference
 $stmt = $mysqli->prepare('update preferences set status=?, arg1=?, arg2=? where number=?');

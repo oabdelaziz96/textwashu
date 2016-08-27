@@ -22,7 +22,7 @@ $fromNumber = substr($_REQUEST['From'], 2); //10 digit phone number of person wh
 $twilioNumber = substr($_REQUEST['To'], 2); //10 digit Twilio phone number that message was sent to
 $twilioAccountSID = $_REQUEST['AccountSid'];
 $mediaExists = $_REQUEST['NumMedia'] > 0;
-if ($mediaExists) $body .= ("Picture URL: ".$_REQUEST['MediaUrl0']);
+if ($mediaExists) $body = "Text: ".$body." --- Media URL: www.".shortenURL($_REQUEST['MediaUrl0']);
 //End of text message data retrieval
 
 //Authenticate Request
@@ -76,8 +76,8 @@ if ($authorizedReq[0]) { //request is authorized
         }
     }
     
-    //Auto reply if applicable
-    if ($autoReplyPref[1] == "On") {
+    //Auto reply if applicable and not a new contact
+    if ($autoReplyPref[1] == "On" && $contactExists[0]) {
         $responseText = addMessage($responseText, $autoReplyPref[2]);
         sendMMS($fromNumber, $autoReplyPref[3], $twilioNumber, $twilioAccountSID, $twilioAuthToken);
     }

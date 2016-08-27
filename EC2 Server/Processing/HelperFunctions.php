@@ -68,7 +68,9 @@ function getPreferences($mysqli) {
     $stmt->bind_result($name, $status, $arg1, $arg2);
     $arr = array();
     while($stmt->fetch()) {
-        $arr[] = array($name, $status, stripslashes($arg1), stripslashes($arg2));
+        $arg1withNewLines = str_replace("*nL*", "\n", stripslashes($arg1));
+        $arg2withNewLines = str_replace("*nL*", "\n", stripslashes($arg2));
+        $arr[] = array($name, $status, $arg1withNewLines, $arg2withNewLines);
     }
     $stmt->close();
     return $arr;
@@ -139,7 +141,8 @@ function getHashtags($mysqli) {
     $stmt->bind_result($id, $status, $response);
     $arr = array();
     while($stmt->fetch()) {
-        $arr[] = array($id, $status, stripslashes($response));
+        $responseWithNewLines = str_replace("*nL*", "\n", stripslashes($response));
+        $arr[] = array($id, $status, $responseWithNewLines);
     }
     $stmt->close();
     return $arr;
@@ -241,24 +244,61 @@ function mergeSmartFields($responseText, $number, $mysqli) {
     return $responseText;
 }
 
-//Takes a regular URL and shortens it to the format https://goo.gl/XXXXXXX
-function shortenURL($longURL) {
-    $APIKey = 'AIzaSyDIv0q20lQ2vvuj6VhaX4f53pghSQ4Lc5U';
-    $dataArray= array("longUrl" => $longURL);                                                                    
-    $data_string_to_google = json_encode($dataArray);
-    $googleServerURL = 'https://www.googleapis.com/urlshortener/v1/url?key='.$APIKey;
-    $ch = curl_init($googleServerURL);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");                                                                     
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string_to_google);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array(                                                                          
-        'Content-Type: application/json',                                                                                
-        'Content-Length: ' . strlen($data_string_to_google))                                                                       
-    );
-    $response = json_decode(curl_exec($ch), true);
-    curl_close($ch);
-    return $response["id"];
+//Takes a regular URL and shortens it to the format textwashu.com/XXXX
+function shortenURL($longURL) {    
+    //Connect to participationDB
+    $newMysqli = setMysqlDatabase('participationDB');
+    
+    //Lookup longURL in urlshortner table (to check if URL has been previously shortned)
+    $stmt = $newMysqli->prepare("select short_path from urlshortner where binary long_URL = '$longURL'");
+    if(!$stmt){
+        printf("Query Prep Failed: %s\n", $newMysqli->error);
+        exit;
+    } 
+    $stmt->execute();
+    $stmt->bind_result($shortPath);
+    $stmt->fetch();
+    $stmt->close();			
+    
+    if (is_null($shortPath)) { //If URL hasn't already been shortened
+        //Generate new shortPath
+        $charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        for($i=0; $i<4; $i++) $shortPath .= $charset[(mt_rand(0,(strlen($charset)-1)))];
+        
+        //Check if shortPath already exists
+        $failDuplicateShortPathTest = true;
+        
+        while ($failDuplicateShortPathTest) {
+            $stmt = $newMysqli->prepare("select short_path from urlshortner where binary short_path = '$shortPath'");
+            if(!$stmt){
+                printf("Query Prep Failed: %s\n", $newMysqli->error);
+                exit;
+            } 
+            $stmt->execute();
+            $stmt->bind_result($shortPathAlreadyExists);
+            $stmt->fetch();
+            $stmt->close();
+            
+            if (is_null($shortPathAlreadyExists)) { //shortPath doesn't already exist
+                $failDuplicateShortPathTest = false; //exit loop
+            }
+        }
+        
+        //Insert shortPath into table
+        $stmt = $newMysqli->prepare("insert into urlshortner (short_path, long_URL, hits) values (?, ?, ?)");
+		if(!$stmt){
+			printf("Query Prep Failed: %s\n", $newMysqli->error);
+			exit;
+		}
+        $hits = 0;
+		$stmt->bind_param('ssi', $shortPath, $newMysqli->real_escape_string($longURL), $hits);
+		$stmt->execute();
+		$stmt->close();
+
+    } else {} //If URL has been already shortened, then skip this
+    
+    $newMysqli->close();
+    return "textwashu.com/".$shortPath;
 }
 
 //Detects and shortens URLs

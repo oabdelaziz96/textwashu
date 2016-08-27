@@ -37,7 +37,7 @@ $array = array();
 $cur = 0;
 
 while($stmt->fetch()) {
-	$response = stripslashes($response);
+	$response = str_replace("*nL*", "\n", stripslashes($response));
 	
 	$editLink = '<a href="editHashtagForm.php?hashtag='.urlencode($id).'&status='.urlencode($status).'&response='.urlencode($response).'">Edit</a>';
 	$deleteLink = '<a href="deleteHashtag.php?hashtag='.urlencode($id).'" class="confirmation">Delete</a>';
@@ -50,7 +50,7 @@ while($stmt->fetch()) {
 		$smartLink = $deleteLink;
 	}
 	
-	$array[$cur] = array($idLink, htmlspecialchars($status), htmlspecialchars($response), $editLink." | ".$smartLink);
+	$array[$cur] = array($idLink, htmlspecialchars($status), $response, $editLink." | ".$smartLink);
 	$cur = $cur + 1;
 }
 

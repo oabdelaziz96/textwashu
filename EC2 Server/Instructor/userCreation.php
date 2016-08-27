@@ -40,6 +40,12 @@ if( !preg_match('/^[A-Za-z0-9_\-]{4,30}$/', $username) ){
         exit;
 }
 
+if( !preg_match('/^.{1,50}$/', $pwd) ){
+		$alertMessage = "Invalid password. Password must be between 1 and 50 charcaters long.";
+		echo $alertMessage;
+		exit;
+}
+
 if( !preg_match('/^(?=.{4,50}$)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/', $email) ){
         $alertMessage = "Invalid email address. Email address must be valid and between 4-50 characters";
 		echo $alertMessage;
@@ -261,7 +267,7 @@ $insertIntoPrefSQL = "INSERT INTO `preferences` (`number`, `name`, `description`
 (11, 'Hashtag Text Message', 'This will insert a hashtag (#) to the beginning of all incoming texts. This enables you to filter for specific responses and act accordingly', 'Off', NULL, '1st argument not accepted', 'Off', '^$', '1st argument not accepted', NULL, '2nd argument not accepted', 'Off', '^$', '2nd argument not accepted'),
 (12, 'Is Session Active?', 'Not a preference but this table is a good place to store this', 'Off', NULL, 'The hashtag corresponding to the session', NULL, NULL, NULL, NULL, 'The question # that is currently active', NULL, NULL, NULL),
 (13, 'Remind to fill profile?', 'Replies with a message reminding users that haven''t filled out their profile to do so, every time they send in a message.', 'On', 'Looks like you still haven''t filled out your profile... please do so now so that we know who you are: [profile_url]', 'Message that you would like to send', 'On', '^.{0,255}$', 'Message must be under 255 characters', '', '2nd argument not accepted', 'Off', '^$', '2nd argument not accepted'),
-(14, 'Reply After Filling Out Profile', 'Send a text or picture to a user to confirm that they have successfully filled out their contact profile', 'On', 'Thanks [first_name]! Your profile is now complete', 'The text that you would like to respond with', 'On', '^.{0,255}$', 'Message must be under 255 characters', NULL, 'The URL of any media you would like to send (such as a picture)', 'On', 'URLREGEX', 'Invalid URL'),
+(14, 'Reply After Filling Out Profile', 'Send a text or picture to a user to confirm that they have successfully filled out their contact profile', 'On', 'Thanks [first_name]. Your profile is now complete!', 'The text that you would like to respond with', 'On', '^.{0,255}$', 'Message must be under 255 characters', NULL, 'The URL of any media you would like to send (such as a picture)', 'On', 'URLREGEX', 'Invalid URL'),
 (15, 'Contact Field Preferences', 'Not viewable as a regular preference', 'Off', '$contactPrefJSON', 'JSON encoded array of contact preferences', NULL, NULL, NULL, NULL, '2nd argument not accepted', NULL, NULL, NULL)";
 
 

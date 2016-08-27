@@ -37,10 +37,12 @@ $array = array();
 $cur = 0;
 
 while($stmt->fetch()) {
-	$response = stripslashes(str_replace('\n---\n', " --- ", htmlspecialchars($response)));
+	$orgMsg = stripslashes(str_replace('\n', " ", htmlspecialchars($orgMsg)));
+	$modMsg = stripslashes(str_replace('\n', " ", htmlspecialchars($modMsg)));
+	$response = stripslashes(str_replace('\n', " ", htmlspecialchars($response)));
 	
 	$phoneLink = '<a href="viewContacts.php?search='.urlencode($pNum).'">'.htmlspecialchars($pNum).'</a>';
-	$array[$cur] = array($id, htmlspecialchars(stripslashes($orgMsg)), htmlspecialchars(stripslashes($modMsg)), $phoneLink, $response, $source, $time);
+	$array[$cur] = array($id, $orgMsg, $modMsg, $phoneLink, $response, $source, $time);
 	$cur = $cur + 1;
 }
 

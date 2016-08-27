@@ -27,6 +27,8 @@ if ($_GET['hashtag'] == "") {//Not a GET request
 
 $twilioNumber = $_SESSION['number'];
 
+//Replace new line html with new line symbol
+$response = str_replace("\r\n", "*nL*", $response);
 
 // Filter variables
 if( !preg_match('/^#[a-zA-Z0-9]{1,19}$/', $id) ){

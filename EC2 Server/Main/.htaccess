@@ -1,1 +1,4 @@
 DirectoryIndex switch.php
+
+RewriteEngine on
+RewriteRule   "^([A-z0-9]{4})$"  "http://processing.textwashu.com/urlShortner.php?path=$1"  [R,L]

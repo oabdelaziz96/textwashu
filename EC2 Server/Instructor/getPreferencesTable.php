@@ -37,10 +37,14 @@ $array = array();
 $cur = 0;
 
 while($stmt->fetch()) {
-	$nameLink = '<a href="editPreferenceForm.php?name='.urlencode($name).'&prefDesc='.urlencode($desc).'&status='.urlencode($status).'&arg1='.urlencode(htmlspecialchars(stripslashes($arg1))).'&arg2='.urlencode(htmlspecialchars(stripslashes($arg2)));
+	$arg1withNewLines = str_replace("*nL*", "\n", stripslashes($arg1));
+    $arg2withNewLines = str_replace("*nL*", "\n", stripslashes($arg2));
+	
+	
+	$nameLink = '<a href="editPreferenceForm.php?name='.urlencode($name).'&prefDesc='.urlencode($desc).'&status='.urlencode($status).'&arg1='.urlencode($arg1withNewLines).'&arg2='.urlencode($arg2withNewLines);
 	$nameLink.= '&arg1Desc='.urlencode(htmlspecialchars($arg1_desc)).'&arg2Desc='.urlencode(htmlspecialchars($arg2_desc)).'&number='.urlencode($num).'">'.$name.'</a>';
 	
-	$array[$cur] = array($nameLink, htmlspecialchars($status), htmlspecialchars(stripslashes($arg1)), htmlspecialchars(stripslashes($arg2)));
+	$array[$cur] = array($nameLink, htmlspecialchars($status), $arg1withNewLines, $arg2withNewLines);
 	$cur = $cur + 1;
 }
 

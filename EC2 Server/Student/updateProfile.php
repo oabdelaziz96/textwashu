@@ -2,10 +2,13 @@
 <title>Thank you</title>
 </head>
 
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <?php
-ini_set('display_errors', '1'); //display errors for debugging
+//ini_set('display_errors', '1'); //display errors for debugging
 session_start();
 $classNum = $_SESSION['classNum'];
+$className = $_SESSION['className'];
 $studNum = $_SESSION['studNum'];
 $authCode = $_SESSION['authCode'];
 $password = $_POST['password'];
@@ -38,13 +41,17 @@ if( !preg_match('/^[A-z0-9]{10}$/', $authCode) ){
 require('../Sensitive/database.php');
 
 //Connect to this class' database
-$mysqli = setMysqlDatabase($classNum);
+$mysqli_class = setMysqlDatabase($classNum);
+
+//Connect to participationDB
+$mysqli_partDB = setMysqlDatabase("participationDB");
 
 //Check if student number and authCode match
-$stmt = $mysqli->prepare("select phone_number from contacts where phone_number = '$studNum' and auth_code = '$authCode'");
+$stmt = $mysqli_class->prepare("select phone_number from contacts where phone_number = '$studNum' and auth_code = '$authCode'");
 if(!$stmt){
-	printf("Query Prep Failed: %s\n", $mysqli->error);
-	exit;
+        $alertMessage = "An unexpected error (101) occurred";
+		echo $alertMessage;
+        exit;
 } 
 $stmt->execute();
 $stmt->bind_result($output);
@@ -58,10 +65,11 @@ if($unauthorizedRequest) {
 }
 
 //Then check what fields the professor wants and get reply preferences
-$stmt = $mysqli->prepare('select status, arg1, arg2 from preferences where number = 14 or number = 15');
+$stmt = $mysqli_class->prepare('select status, arg1, arg2 from preferences where number = 14 or number = 15');
 if(!$stmt){
-	printf("Query Prep Failed: %s\n", $mysqli->error);
-	exit;
+        $alertMessage = "An unexpected error (102) occurred";
+		echo $alertMessage;
+        exit;
 } 
 $stmt->execute();
 $stmt->bind_result($profPrefStatus, $profPrefArg1, $profPrefArg2);
@@ -85,16 +93,37 @@ $enableWuKey = $contactPrefArray["enableWuKey"];
 $enableID = $contactPrefArray["enableID"];
 
 //Then check regex accordingly
-if( !preg_match('/^.{1,50}$/', $password) ){ //figure out regex
+if( !preg_match('/^.{1,50}$/', $password) ){
+				
+    //Check if student already has password
 		
-		if ($enableWeb) {//we're actually looking for this field
-				$alertMessage = "Invalid password. Password must be between 1 and 50 charcaters long.";
+		//Check if we already have user info from another class
+		$stmt = $mysqli_partDB->prepare("select web_password from contacts where phone_number = '$studNum'");
+		if(!$stmt){
+				$alertMessage = "An unexpected error (103) occurred";
 				echo $alertMessage;
 				exit;
-		} else {
-				$password = "";
-		}
+		} 
+		$stmt->execute();
+		$stmt->bind_result($previous_password);
+		$stmt->fetch();
+		$stmt->close();		
 		
+		if (is_null($previous_password) || ($previous_password == "")) {
+				//If student doesn't have a password, then check enableWeb
+				
+				if ($enableWeb) { //Check against regex
+						$alertMessage = "Invalid password. Password must be between 1 and 50 charcaters long.";
+						echo $alertMessage;
+						exit;	
+				} else { //Leave passord as blank
+						$password = "";	
+				}		
+				
+		} else {
+				//If student has password, then copy it
+				$password = $previous_password;
+		}
 
 } else {
 		
@@ -173,24 +202,22 @@ $authCode = "f".substr(uniqid(),0,9);
 $profileURL = "http://student.textwashu.com/editProfile.php?cN=$classNum&sN=$studNum&aC=$authCode";
 
 //Update data in class database
-$stmt = $mysqli->prepare('update contacts set web_password=?, first_name=?, last_name=?, email=?, wustl_key=?, id_number=?, auth_code=?, profile_url=? where phone_number=?');
+$stmt = $mysqli_class->prepare('update contacts set first_name=?, last_name=?, email=?, wustl_key=?, id_number=?, auth_code=?, profile_url=? where phone_number=?');
 if(!$stmt){
-	printf("Query Prep Failed: %s\n", $mysqli->error);
-	exit;
+        $alertMessage = "An unexpected error (104) occurred";
+		echo $alertMessage;
+        exit;
 }
-$stmt->bind_param('sssssssss', $password, $first_name, $last_name, $mysqli->real_escape_string($email), $mysqli->real_escape_string($wustl_key), $id_number, $authCode, $profileURL, $studNum);
+$stmt->bind_param('ssssssss', $first_name, $last_name, $mysqli_class->real_escape_string($email), $mysqli_class->real_escape_string($wustl_key), $id_number, $authCode, $profileURL, $studNum);
 $stmt->execute();
 $stmt->close();
-$mysqli->close();
 
-//Update data in participationDB
-$mysqli = setMysqlDatabase("participationDB");
-
-//Check if phone number is already there
-$stmt = $mysqli->prepare("select phone_number from contacts where phone_number = '$studNum'");
+//Check if phone number is already in participationDB
+$stmt = $mysqli_partDB->prepare("select phone_number from contacts where phone_number = '$studNum'");
 if(!$stmt){
-	printf("Query Prep Failed: %s\n", $mysqli->error);
-	exit;
+        $alertMessage = "An unexpected error (105) occurred";
+		echo $alertMessage;
+        exit;
 } 
 $stmt->execute();
 $stmt->bind_result($output);
@@ -199,25 +226,54 @@ $contactExists = !is_null($output);
 $stmt->close();
 
 if ($contactExists) { //Then update information
-		$stmt = $mysqli->prepare('update contacts set first_name=?, last_name=?, email=?, wustl_key=?, id_number=? where phone_number=?');
+		$stmt = $mysqli_partDB->prepare('update contacts set first_name=?, last_name=?, email=?, wustl_key=?, id_number=?, web_password=? where phone_number=?');
 		if(!$stmt){
-			printf("Query Prep Failed: %s\n", $mysqli->error);
-			exit;
+				$alertMessage = "An unexpected error (106) occurred";
+				echo $alertMessage;
+				exit;
 		}
-		$stmt->bind_param('ssssss', $first_name, $last_name, $mysqli->real_escape_string($email), $mysqli->real_escape_string($wustl_key), $id_number, $studNum);
+		$stmt->bind_param('sssssss', $first_name, $last_name, $mysqli_partDB->real_escape_string($email), $mysqli_partDB->real_escape_string($wustl_key), $id_number, $password, $studNum);
 		$stmt->execute();
 		$stmt->close();
 
 } else { //Add contact since they don't exist yet
-		$stmt = $mysqli->prepare("insert into contacts (phone_number, first_name, last_name, email, wustl_key, id_number) values (?, ?, ?, ?, ?, ?)");
+		$stmt = $mysqli_partDB->prepare("insert into contacts (phone_number, first_name, last_name, email, wustl_key, id_number, web_password) values (?, ?, ?, ?, ?, ?, ?)");
 		if(!$stmt){
-			printf("Query Prep Failed: %s\n", $mysqli->error);
-			exit;
+				$alertMessage = "An unexpected error (107) occurred";
+				echo $alertMessage;
+				exit;
 		}
-		$stmt->bind_param('ssssss', $studNum, $first_name, $last_name, $mysqli->real_escape_string($email), $mysqli->real_escape_string($wustl_key), $id_number);
+		$stmt->bind_param('sssssss', $studNum, $first_name, $last_name, $mysqli_partDB->real_escape_string($email), $mysqli_partDB->real_escape_string($wustl_key), $id_number, $password);
 		$stmt->execute();
 		$stmt->close();
+}
+
+//Add student-class row to studwebaccess table if applicable
+if ($enableWeb) {
+		//Check if user and class have a row
+		$stmt = $mysqli_partDB->prepare("select id from studwebaccess where stud_num = '$studNum' and class_num = '$classNum'");
+		if(!$stmt){
+				$alertMessage = "An unexpected error (108) occurred";
+				echo $alertMessage;
+				exit;
+		}
+		$stmt->execute();
+		$stmt->bind_result($output);
+		$stmt->fetch();
+		$needStudWebAccessRow = is_null($output);
+		$stmt->close();
 		
+		if($needStudWebAccessRow) { //Add row since it doesn't exist
+				$stmt = $mysqli_partDB->prepare("insert into studwebaccess (stud_num, class_num, class_name) values (?, ?, ?)");
+				if(!$stmt){
+						$alertMessage = "An unexpected error (109) occurred";
+						echo $alertMessage;
+						exit;
+				}
+				$stmt->bind_param('sss', $studNum, $classNum, $className);
+				$stmt->execute();
+				$stmt->close();
+		}	
 }
 
 //If reply is requested
@@ -228,35 +284,40 @@ if ($replyPref[0] == "On") {
 		
 		//Get twilio account information
 		$sql = "select twilio_account_sid, twilio_auth_token from accounts where twilio_phone_number = '$classNum'";
-		$stmt = $mysqli->prepare($sql);
+		$stmt = $mysqli_partDB->prepare($sql);
 		if(!$stmt){
-			printf("Query Prep Failed: %s\n", $mysqli->error);
-			exit;
+				$alertMessage = "An unexpected error (110) occurred";
+				echo $alertMessage;
+				exit;
 		} 
 		$stmt->execute();
 		$stmt->bind_result($twilio_sid, $twilio_auth);
 		$stmt->fetch();
 		$stmt->close();
-		$mysqli->close();
 		
-		//Connect to this class' database
-		$mysqli = setMysqlDatabase($classNum);
 		
 		//Send SMS if applicable
-		$smsMessgae = mergeSmartFields($replyPref[1], $studNum, $mysqli);
-		$mysqli->close();
+		$smsMessgae = mergeSmartFields($replyPref[1], $studNum, $mysqli_class);
+		//NEED TO ADD URL SHORTENER IF PREFERENCE IS ENABLED
 		sendSMS($studNum, $smsMessgae, $classNum, $twilio_sid, $twilio_auth);
 		
 		//Send MMS is applicable
 		sendMMS($studNum, $replyPref[2], $classNum, $twilio_sid, $twilio_auth);
 		
+		//Display thank you message
+		echo "Thank you! You should receive a confirmation text message shortly.";
+		
+} else {
+		//Display thank you message
+		echo "Thank you for completing your profile!";
 }
 
-
+//Close DB connections
+$mysqli_class->close();
+$mysqli_partDB->close();
 
 //Destroy Session and Exit
 session_destroy();
-echo "Thank you! You should receive a confirmation text message shortly.";
 exit;
 
 ?>
