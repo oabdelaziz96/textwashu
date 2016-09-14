@@ -29,5 +29,5 @@ require "restrictedArea.php";
 <a href="liveCrossLogin.php?location=quiz"><button class="button button3">Administer a Quiz Session</button></a><br>
 <a href="viewContacts.php"><button class="button button3">Manage Contacts</button></a><br>
 <a href="viewAllMessages.php"><button class="button button3">View All Messages</button></a><br>
-<a href="http://www.google.com"><button class="button button3">Send Message</button></a><br><!--Not implemented yet-->
+<a href="sendMessageForm.html"><button class="button button3">Send Message</button></a><br><!--Not fully implemented yet-->
 <a href="managePreferences.php"><button class="button button3">Preferences</button></a><br>

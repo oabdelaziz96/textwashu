@@ -5,7 +5,7 @@ require('../Sensitive/database.php'); //Database Access
 //ini_set('display_errors', '1'); //display errors for debugging
 
 //Get Message Data from Twilio
-    //Type = Twilio
+    //Source = Twilio
     //Body
     //Media URL (shortened, if applicable)
     //From Number
@@ -18,7 +18,7 @@ require('../Sensitive/database.php'); //Database Access
 
     //If request is from Twilio
     
-        //Send original message to node
+        //Send message to node (original message, phone number, class number)
     
         //Connect to class database
     
@@ -27,17 +27,46 @@ require('../Sensitive/database.php'); //Database Access
         //Retrieve preferences
             //Reply to All Texts (SMS and/or MMS)
             //Reply to First Messages (SMS and/or MMS)
-            //Add Keyword to All Incoming Texts (Which keyword?)
+            //Add Keyword to All Incoming Texts (Which keyword?) {When turning on preference here, we should make sure that it is an active table. Remove from here if it gets archived/deleted.}
             //Reply to Texts without a Keyword (SMS and/or MMS)
             //Reply to Texts with an Archived Keyword (SMS)
             //Forward All Texts (Phone number to forward to?)
             //Check Regular Expression (Regex, Response)
             //Shorten URLs
             //Remind to Fill Profile
-            //Session Information -- Not really a preference but here
+            //Session Information -- Not really a preference but good location here
             //Enable Web Access -- Not needed for Hub
             //Message After Filling Out Profile -- Not needed for Hub
             //Contact Preferences -- Not needed for Hub
+            
+        //Forward message (APPLY PREFERENCE)
+        
+        //Check if contact already exists
+            //If new contact
+                //Add number to contacts
+                //First Message (APPLY PREFERENCE)
+            
+            //If already registered
+                //Remind to Fill Profile (APPLY PREFERENCE)
+                
+        //Identify type of message
+            //One letter (w/ or w/o spaces before/after) //Process as keyword only if matches //Don't show in live questions
+            
+            
+            //One word (w/ or w/o spaces before/after) //Process as keyword
+            
+            
+            
+            //Other //Process using hashtags as keywords
+            
+            
+            
+            //Process "Add Keyword" (APPLY PREFERENCE) (Don't double reply if keyword was already there as one word or hashtag) 
+                
+        
+                
+            
+        
             
         
         
